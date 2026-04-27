@@ -285,42 +285,45 @@ private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // Attempt 1: Direct
+    $attempts = [];
+
+    // Step 1: Direct
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
+    $attempts['step1_direct'] = json_last_error_msg();
 
-    // Attempt 2: stripslashes
-    $decoded = json_decode(stripslashes($raw), true);
+    // Step 2: Stripslashes
+    $str = stripslashes($raw);
+    $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
+    $attempts['step2_stripslashes'] = json_last_error_msg();
 
-    // Attempt 3: 52" jaise inch marks fix karo
-    $fixed = preg_replace_callback(
-        '/(\d+)"/',
-        fn($m) => $m[1] . 'in',
-        $raw
-    );
+    // Step 3: Inch fix on stripped
+    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $str);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
+    $attempts['step3_inch_fix'] = json_last_error_msg();
 
-    // Attempt 4: stripslashes + inch fix
-    $fixed = preg_replace_callback(
-        '/(\d+)"/',
-        fn($m) => $m[1] . 'in',
-        stripslashes($raw)
-    );
-    $decoded = json_decode($fixed, true);
+    // Step 4: Inch fix on raw
+    $fixed2 = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $raw);
+    $decoded = json_decode($fixed2, true);
     if (is_array($decoded)) return $decoded;
+    $attempts['step4_raw_inch'] = json_last_error_msg();
 
-    // Attempt 5: Control characters remove
-    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw);
+    // Step 5: Control chars + all
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+    $clean = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $clean);
     $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
+    $attempts['step5_clean_all'] = json_last_error_msg();
 
-    // Attempt 6: Sab ek saath
-    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', stripslashes($raw));
-    $clean = preg_replace_callback('/(\d+)"/', fn($m) => $m[1] . 'in', $clean);
-    $decoded = json_decode($clean, true);
-    if (is_array($decoded)) return $decoded;
+    // ===== DEBUG INFO =====
+    \Log::error('Schema decode failed - all steps', [
+        'attempts'    => $attempts,
+        'raw_first_500' => substr($raw, 0, 500),
+        'str_first_500' => substr($str, 0, 500),
+        'fixed_first_500' => substr($fixed, 0, 500),
+    ]);
 
     return null;
 }
