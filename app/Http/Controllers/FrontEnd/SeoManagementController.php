@@ -285,44 +285,35 @@ private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    $attempts = [];
-
     // Step 1: Direct
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
-    $attempts['step1_direct'] = json_last_error_msg();
 
-    // Step 2: Stripslashes
+    // Step 2: Stripslashes pehle
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
-    $attempts['step2_stripslashes'] = json_last_error_msg();
 
-    // Step 3: Inch fix on stripped
-    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $str);
+    // Step 3: Stripslashes ke baad inch fix
+    // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
+    $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
-    $attempts['step3_inch_fix'] = json_last_error_msg();
 
-    // Step 4: Inch fix on raw
-    $fixed2 = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $raw);
+    // Step 4: Raw pe inch fix (without stripslashes)
+    $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
     $decoded = json_decode($fixed2, true);
     if (is_array($decoded)) return $decoded;
-    $attempts['step4_raw_inch'] = json_last_error_msg();
 
-    // Step 5: Control chars + all
+    // Step 5: Dono ek saath + control chars
     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-    $clean = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $clean);
+    $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
     $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
-    $attempts['step5_clean_all'] = json_last_error_msg();
 
-    // ===== DEBUG INFO =====
-    \Log::error('Schema decode failed - all steps', [
-        'attempts'    => $attempts,
-        'raw_first_500' => substr($raw, 0, 500),
-        'str_first_500' => substr($str, 0, 500),
-        'fixed_first_500' => substr($fixed, 0, 500),
+    \Log::error('Schema decode failed', [
+        'error'   => json_last_error_msg(),
+        'snippet' => substr($fixed, 0, 300),
     ]);
 
     return null;
