@@ -203,6 +203,11 @@ public function getByRelationalId($identifier)
 
         $filtered['schema'] = $item->schema ?? null;
         if (!empty($filtered['schema'])) {
+            dd([
+    'db_schema' => $item->getRawOriginal('schema'),
+    'eloquent_schema' => $item->schema,
+    'after_filter' => $this->filterFields($item)['schema'] ?? null
+]);
 
             $raw = $filtered['schema'];
             $decoded = null;
