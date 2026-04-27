@@ -30,7 +30,7 @@ class HorecaIqController extends BaseController
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		$recordsQuery = Product::query();
+		$recordsQuery = Product::query()->where('status', 'published');
 
 		/* Validate required pagination params */
 		if (!$request->filled('page') || !$request->filled('length')) {
