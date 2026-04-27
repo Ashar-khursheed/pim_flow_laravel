@@ -199,8 +199,9 @@ public function getByRelationalId($identifier)
     // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
 
-        $filtered = $this->filterFields($item);
+      $filtered = $this->filterFields($item) ?? [];
 
+        $filtered['schema'] = $item->schema ?? null;
         if (!empty($filtered['schema'])) {
 
             $raw = $filtered['schema'];
