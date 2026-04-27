@@ -211,7 +211,7 @@ public function getByRelationalId($identifier)
             $decoded = [$decoded];
         }
 
-        // Clean descriptions
+        // Description clean karo
         foreach ($decoded as &$schemaItem) {
             if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
             foreach ($schemaItem['@graph'] as &$graph) {
@@ -259,37 +259,42 @@ public function getByRelationalId($identifier)
 }
 
 // ============================================================
-// DECODE — multiple attempts with targeted fixes
+// DECODE — step by step, simple aur safe
 // ============================================================
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // Attempt 1: Direct
+    // Step 1: Direct decode
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Stripslashes version
+    // Step 2: Stripslashes (DB mein \" stored ho toh)
     $str = stripslashes($raw);
-
-    // Attempt 2: Stripslashes only
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Attempt 3: Stripslashes + all fixes
-    $fixed = $this->fixJsonString($str);
+    // Step 3: Stripslashes + inch marks fix (52" -> 52in)
+    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $str);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Attempt 4: Control chars bhi hata do
-    $fixed = preg_replace('/[\x00-\x1F\x7F]/u', '', $fixed);
+    // Step 4: Raw + inch marks fix (without stripslashes)
+    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $raw);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Attempt 5: Raw pe bhi try karo fixes ke saath
-    $fixed2 = $this->fixJsonString($raw);
-    $decoded = json_decode($fixed2, true);
+    // Step 5: Control characters remove + stripslashes + inch fix
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+    $clean = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $clean);
+    $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
+
+    // Step 6: Log karo debug k liye aur null return
+    \Log::error('Schema decode failed', [
+        'raw_snippet' => substr($raw, 0, 300),
+        'json_error'  => json_last_error_msg()
+    ]);
 
     return null;
 }
