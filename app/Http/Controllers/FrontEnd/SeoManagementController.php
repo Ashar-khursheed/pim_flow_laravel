@@ -290,7 +290,11 @@ public function getByRelationalId($identifier)
 
             unset($schemaItem);
 
-            $filtered['schema'] = $decoded;
+            if (isset($decoded['raw_schema'])) {
+            $decoded = json_decode($decoded['raw_schema'], true);
+        }
+
+        $filtered['schema'] = $decoded;
 
             // =========================
             // 5. CANONICAL URL EXTRACTION
