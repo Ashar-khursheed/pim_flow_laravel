@@ -170,24 +170,17 @@ public function getByRelationalId($identifier)
     // FILTER LOGIC
     // =========================
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-
         $path = parse_url($identifier, PHP_URL_PATH);
         $path = ltrim($path, '/');
-
         $seoQuery->where(function ($q) use ($identifier, $path) {
             $q->where('url', $identifier)
               ->orWhere('url', '/' . $path)
               ->orWhere('url', $path);
         });
-
     } elseif (is_numeric($identifier)) {
-
         $seoQuery->where('relational_id', $identifier);
-
     } else {
-
         $path = ltrim($identifier, '/');
-
         $seoQuery->where(function ($q) use ($identifier, $path) {
             $q->where('url', $identifier)
               ->orWhere('url', '/' . $path)
@@ -200,135 +193,136 @@ public function getByRelationalId($identifier)
     // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
 
-     $filtered = $this->filterFields($item) ?? [];
+        // Saare fields lo
+        $filtered = $this->filterFields($item) ?? [];
 
-        // bypass ALL casts, accessors, mutators
-        $filtered['schema'] = DB::table('seo_management')
+        // Raw schema directly DB se lo (casts/accessors bypass)
+        $raw = DB::table('seo_management')
             ->where('id', $item->id)
             ->value('schema');
-        if (!empty($filtered['schema'])) {
-          
 
-            $raw = $filtered['schema'];
-            $decoded = null;
-
-            // =========================
-            // 1. NORMAL JSON DECODE
-            // =========================
-            if (is_array($raw)) {
-                $decoded = $raw;
-            } else {
-                $decoded = json_decode($raw, true);
-            }
-
-            // =========================
-            // 2. FIX ATTEMPT
-            // =========================
-            if (json_last_error() !== JSON_ERROR_NONE) {
-
-                $clean = str_replace(
-                    ["\n", "\r", "\t"],
-                    ["\\n", "\\r", "\\t"],
-                    $raw
-                );
-
-                $clean = preg_replace('/(\d)"/', '$1\\"', $clean);
-
-                $decoded = json_decode($clean, true);
-            }
-
-            // =========================
-            // 3. FINAL FALLBACK (IMPORTANT)
-            // =========================
-            if (!is_array($decoded)) {
-
-                $filtered['schema'] = [
-                    'raw_schema' => $raw,
-                    'parsed'     => null
-                ];
-
-                $filtered['canonical_url'] = null;
-
-                return $filtered;
-            }
-
-            // =========================
-            // 4. NORMALIZE SCHEMA
-            // =========================
-            if (!isset($decoded[0])) {
-                $decoded = [$decoded];
-            }
-
-            foreach ($decoded as &$schemaItem) {
-
-                if (!is_array($schemaItem) || empty($schemaItem['@graph'])) {
-                    continue;
-                }
-
-                foreach ($schemaItem['@graph'] as &$graph) {
-
-                    if (!is_array($graph) || !isset($graph['description'])) {
-                        continue;
-                    }
-
-                    if (is_array($graph['description'])) {
-
-                        $graph['description'] = trim(
-                            strip_tags(
-                                implode(' ', array_filter($graph['description']))
-                            )
-                        );
-
-                    } elseif (is_string($graph['description'])) {
-
-                        $graph['description'] = trim(strip_tags($graph['description']));
-                    }
-                }
-
-                unset($graph);
-            }
-
-            unset($schemaItem);
-
-
-    $filtered['schema'] = $decoded;
-
-            // =========================
-            // 5. CANONICAL URL EXTRACTION
-            // =========================
-            $canonicalUrl = null;
-
-            foreach ($decoded as $schemaItem) {
-
-                if (!is_array($schemaItem)) continue;
-
-                if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
-
-                    foreach ($schemaItem['@graph'] as $graph) {
-
-                        if (!empty($graph['url'])) {
-                            $canonicalUrl = $graph['url'];
-                            break 2;
-                        }
-                    }
-                }
-
-                if (!empty($schemaItem['url'])) {
-                    $canonicalUrl = $schemaItem['url'];
-                    break;
-                }
-            }
-
-            $filtered['canonical_url'] = $canonicalUrl;
+        if (empty($raw)) {
+            $filtered['schema']        = null;
+            $filtered['canonical_url'] = null;
+            return $filtered;
         }
+
+        // =========================
+        // SCHEMA DECODE
+        // =========================
+        $decoded = $this->decodeSchema($raw);
+
+        if (!is_array($decoded)) {
+            // Decode bilkul fail ho gaya — raw string rakh lo
+            $filtered['schema']        = $raw;
+            $filtered['canonical_url'] = null;
+            return $filtered;
+        }
+
+        // Normalize to array
+        if (!isset($decoded[0])) {
+            $decoded = [$decoded];
+        }
+
+        // =========================
+        // CLEAN DESCRIPTIONS
+        // =========================
+        foreach ($decoded as &$schemaItem) {
+            if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
+            foreach ($schemaItem['@graph'] as &$graph) {
+                if (!is_array($graph) || !isset($graph['description'])) continue;
+                if (is_array($graph['description'])) {
+                    $graph['description'] = trim(
+                        strip_tags(implode(' ', array_filter($graph['description'])))
+                    );
+                } elseif (is_string($graph['description'])) {
+                    $graph['description'] = trim(strip_tags($graph['description']));
+                }
+            }
+            unset($graph);
+        }
+        unset($schemaItem);
+
+        // ✅ Parsed schema set karo
+        $filtered['schema'] = $decoded;
+
+        // =========================
+        // CANONICAL URL EXTRACT
+        // =========================
+        $canonicalUrl = null;
+        foreach ($decoded as $schemaItem) {
+            if (!is_array($schemaItem)) continue;
+            if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+                foreach ($schemaItem['@graph'] as $graph) {
+                    if (!empty($graph['url'])) {
+                        $canonicalUrl = $graph['url'];
+                        break 2;
+                    }
+                }
+            }
+            if (!empty($schemaItem['url'])) {
+                $canonicalUrl = $schemaItem['url'];
+                break;
+            }
+        }
+        $filtered['canonical_url'] = $canonicalUrl;
 
         return $filtered;
     });
 
-    return response()->json([
-        'status' => true,
-        'data'   => $seoData
-    ]);
+    return response()->json(
+        ['status' => true, 'data' => $seoData],
+        200,
+        [],
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    );
+}
+
+// =============================================
+// SCHEMA DECODE HELPER — Corrupted JSON fix
+// =============================================
+private function decodeSchema($raw)
+{
+    if (is_array($raw)) return $raw;
+
+    // Attempt 1: Direct
+    $decoded = json_decode($raw, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Attempt 2: stripslashes
+    $decoded = json_decode(stripslashes($raw), true);
+    if (is_array($decoded)) return $decoded;
+
+    // Attempt 3: 52" jaise inch marks fix karo
+    $fixed = preg_replace_callback(
+        '/(\d+)"/',
+        fn($m) => $m[1] . 'in',
+        $raw
+    );
+    $decoded = json_decode($fixed, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Attempt 4: stripslashes + inch fix
+    $fixed = preg_replace_callback(
+        '/(\d+)"/',
+        fn($m) => $m[1] . 'in',
+        stripslashes($raw)
+    );
+    $decoded = json_decode($fixed, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Attempt 5: Control characters remove
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw);
+    $decoded = json_decode($clean, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Attempt 6: Sab ek saath
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', stripslashes($raw));
+    $clean = preg_replace_callback('/(\d+)"/', fn($m) => $m[1] . 'in', $clean);
+    $decoded = json_decode($clean, true);
+    if (is_array($decoded)) return $decoded;
+
+    return null;
 }
 
     // public function getByRelationalId($identifier)
