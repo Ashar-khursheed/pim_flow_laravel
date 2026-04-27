@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\SeoManagement;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 class SeoManagementController extends Controller
 {
     /**
