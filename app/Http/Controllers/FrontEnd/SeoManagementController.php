@@ -105,50 +105,214 @@ class SeoManagementController extends Controller
      * )
      */
 
-    public function getByRelationalId($identifier)
-{
-    $seoQuery = SeoManagement::with('seo_secondary_keywords');
+//     public function getByRelationalId($identifier)
+// {
+//     $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
+//     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+//         // Handle full URL
+//         $path = parse_url($identifier, PHP_URL_PATH);
+//         $path = ltrim($path, '/');
+
+//         $seoQuery->where(function ($q) use ($identifier, $path) {
+//             $q->where('url', $identifier)         // full URL
+//               ->orWhere('url', '/' . $path)       // with leading slash
+//               ->orWhere('url', $path);            // without leading slash
+//         });
+//     } elseif (is_numeric($identifier)) {
+//         // Handle numeric relational_id
+//         $seoQuery->where('relational_id', $identifier);
+//     } else {
+//         // Handle string identifier like "countertop-gas-ranges"
+//         $seoQuery->where(function ($q) use ($identifier) {
+//             $path = ltrim($identifier, '/');
+//             $q->where('url', $identifier)
+//               ->orWhere('url', '/' . $path)
+//               ->orWhere('url', $path);
+//         });
+//     }
+
+//     $seoData = $seoQuery->get()->map(function ($item) {
+//         $filtered = $this->filterFields($item);
+
+//         // Decode schema JSON
+//         if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+//             $decoded = json_decode($filtered['schema'], true);
+//             if (json_last_error() === JSON_ERROR_NONE) {
+//                 if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+//                     $baseUrl = url("/");
+//                     if (strtolower($decoded['@type']) === 'product') {
+//                         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+//                     } elseif (strtolower($decoded['@type']) === 'category') {
+//                         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+//                     }
+//                 }
+//                 $filtered['schema'] = $decoded;
+//             }
+//         }
+
+//         return $filtered;
+//     });
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => $seoData
+//     ]);
+// }
+
+public function getByRelationalId($identifier)
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords')
+        ->orderBy('id', 'desc');
+
+    // =========================
+    // FILTER LOGIC
+    // =========================
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-        // Handle full URL
+
         $path = parse_url($identifier, PHP_URL_PATH);
         $path = ltrim($path, '/');
 
         $seoQuery->where(function ($q) use ($identifier, $path) {
-            $q->where('url', $identifier)         // full URL
-              ->orWhere('url', '/' . $path)       // with leading slash
-              ->orWhere('url', $path);            // without leading slash
+            $q->where('url', $identifier)
+              ->orWhere('url', '/' . $path)
+              ->orWhere('url', $path);
         });
+
     } elseif (is_numeric($identifier)) {
-        // Handle numeric relational_id
+
         $seoQuery->where('relational_id', $identifier);
+
     } else {
-        // Handle string identifier like "countertop-gas-ranges"
-        $seoQuery->where(function ($q) use ($identifier) {
-            $path = ltrim($identifier, '/');
+
+        $path = ltrim($identifier, '/');
+
+        $seoQuery->where(function ($q) use ($identifier, $path) {
             $q->where('url', $identifier)
               ->orWhere('url', '/' . $path)
               ->orWhere('url', $path);
         });
     }
 
+    // =========================
+    // FETCH DATA
+    // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
+
         $filtered = $this->filterFields($item);
 
-        // Decode schema JSON
-        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-            $decoded = json_decode($filtered['schema'], true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-                    $baseUrl = url("/");
-                    if (strtolower($decoded['@type']) === 'product') {
-                        $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-                    } elseif (strtolower($decoded['@type']) === 'category') {
-                        $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+        if (!empty($filtered['schema'])) {
+
+            $raw = $filtered['schema'];
+            $decoded = null;
+
+            // =========================
+            // 1. NORMAL JSON DECODE
+            // =========================
+            if (is_array($raw)) {
+                $decoded = $raw;
+            } else {
+                $decoded = json_decode($raw, true);
+            }
+
+            // =========================
+            // 2. FIX ATTEMPT
+            // =========================
+            if (json_last_error() !== JSON_ERROR_NONE) {
+
+                $clean = str_replace(
+                    ["\n", "\r", "\t"],
+                    ["\\n", "\\r", "\\t"],
+                    $raw
+                );
+
+                $clean = preg_replace('/(\d)"/', '$1\\"', $clean);
+
+                $decoded = json_decode($clean, true);
+            }
+
+            // =========================
+            // 3. FINAL FALLBACK (IMPORTANT)
+            // =========================
+            if (!is_array($decoded)) {
+
+                $filtered['schema'] = [
+                    'raw_schema' => $raw,
+                    'parsed'     => null
+                ];
+
+                $filtered['canonical_url'] = null;
+
+                return $filtered;
+            }
+
+            // =========================
+            // 4. NORMALIZE SCHEMA
+            // =========================
+            if (!isset($decoded[0])) {
+                $decoded = [$decoded];
+            }
+
+            foreach ($decoded as &$schemaItem) {
+
+                if (!is_array($schemaItem) || empty($schemaItem['@graph'])) {
+                    continue;
+                }
+
+                foreach ($schemaItem['@graph'] as &$graph) {
+
+                    if (!is_array($graph) || !isset($graph['description'])) {
+                        continue;
+                    }
+
+                    if (is_array($graph['description'])) {
+
+                        $graph['description'] = trim(
+                            strip_tags(
+                                implode(' ', array_filter($graph['description']))
+                            )
+                        );
+
+                    } elseif (is_string($graph['description'])) {
+
+                        $graph['description'] = trim(strip_tags($graph['description']));
                     }
                 }
-                $filtered['schema'] = $decoded;
+
+                unset($graph);
             }
+
+            unset($schemaItem);
+
+            $filtered['schema'] = $decoded;
+
+            // =========================
+            // 5. CANONICAL URL EXTRACTION
+            // =========================
+            $canonicalUrl = null;
+
+            foreach ($decoded as $schemaItem) {
+
+                if (!is_array($schemaItem)) continue;
+
+                if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+
+                    foreach ($schemaItem['@graph'] as $graph) {
+
+                        if (!empty($graph['url'])) {
+                            $canonicalUrl = $graph['url'];
+                            break 2;
+                        }
+                    }
+                }
+
+                if (!empty($schemaItem['url'])) {
+                    $canonicalUrl = $schemaItem['url'];
+                    break;
+                }
+            }
+
+            $filtered['canonical_url'] = $canonicalUrl;
         }
 
         return $filtered;
@@ -156,7 +320,7 @@ class SeoManagementController extends Controller
 
     return response()->json([
         'status' => true,
-        'data' => $seoData
+        'data'   => $seoData
     ]);
 }
 
