@@ -105,77 +105,25 @@ class SeoManagementController extends Controller
      * )
      */
 
-//     public function getByRelationalId($identifier)
-// {
-//     $seoQuery = SeoManagement::with('seo_secondary_keywords');
-
-//     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-//         // Handle full URL
-//         $path = parse_url($identifier, PHP_URL_PATH);
-//         $path = ltrim($path, '/');
-
-//         $seoQuery->where(function ($q) use ($identifier, $path) {
-//             $q->where('url', $identifier)         // full URL
-//               ->orWhere('url', '/' . $path)       // with leading slash
-//               ->orWhere('url', $path);            // without leading slash
-//         });
-//     } elseif (is_numeric($identifier)) {
-//         // Handle numeric relational_id
-//         $seoQuery->where('relational_id', $identifier);
-//     } else {
-//         // Handle string identifier like "countertop-gas-ranges"
-//         $seoQuery->where(function ($q) use ($identifier) {
-//             $path = ltrim($identifier, '/');
-//             $q->where('url', $identifier)
-//               ->orWhere('url', '/' . $path)
-//               ->orWhere('url', $path);
-//         });
-//     }
-
-//     $seoData = $seoQuery->get()->map(function ($item) {
-//         $filtered = $this->filterFields($item);
-
-//         // Decode schema JSON
-//         if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-//             $decoded = json_decode($filtered['schema'], true);
-//             if (json_last_error() === JSON_ERROR_NONE) {
-//                 if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-//                     $baseUrl = url("/");
-//                     if (strtolower($decoded['@type']) === 'product') {
-//                         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-//                     } elseif (strtolower($decoded['@type']) === 'category') {
-//                         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
-//                     }
-//                 }
-//                 $filtered['schema'] = $decoded;
-//             }
-//         }
-
-//         return $filtered;
-//     });
-
-//     return response()->json([
-//         'status' => true,
-//         'data' => $seoData
-//     ]);
-// }
-
-public function getByRelationalId($identifier)
-{   
-    $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
+    public function getByRelationalId($identifier)
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        // Handle full URL
         $path = parse_url($identifier, PHP_URL_PATH);
         $path = ltrim($path, '/');
 
         $seoQuery->where(function ($q) use ($identifier, $path) {
-            $q->where('url', $identifier)
-              ->orWhere('url', '/' . $path)
-              ->orWhere('url', $path);
+            $q->where('url', $identifier)         // full URL
+              ->orWhere('url', '/' . $path)       // with leading slash
+              ->orWhere('url', $path);            // without leading slash
         });
     } elseif (is_numeric($identifier)) {
+        // Handle numeric relational_id
         $seoQuery->where('relational_id', $identifier);
     } else {
+        // Handle string identifier like "countertop-gas-ranges"
         $seoQuery->where(function ($q) use ($identifier) {
             $path = ltrim($identifier, '/');
             $q->where('url', $identifier)
@@ -187,121 +135,19 @@ public function getByRelationalId($identifier)
     $seoData = $seoQuery->get()->map(function ($item) {
         $filtered = $this->filterFields($item);
 
-        if (!empty($filtered['schema'])) {
-            $raw = $filtered['schema'];
-            $decoded = null;
-
-            if (is_array($raw)) {
-                $decoded = $raw;
-            } else {
-                $raw = trim($raw);
-
-                $attempts = [
-                    // 1. Direct decode
-                    function($s) { 
-                        return json_decode($s, true); 
-                    },
-                    // 2. Fix unescaped measurement quotes (e.g. 52" -> 52\")
-                    function($s) { 
-                        $s = preg_replace('/(\d)"/', '$1\\"', $s);
-                        return json_decode($s, true);
-                    },
-                    // 3. Fix literal control characters
-                    function($s) { 
-                        $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
-                        return json_decode($s, true);
-                    },
-                    // 4. Fix both measurement quotes + control characters
-                    function($s) {
-                        $s = preg_replace('/(\d)"/', '$1\\"', $s);
-                        $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
-                        return json_decode($s, true);
-                    },
-                    // 5. stripslashes
-                    function($s) { 
-                        return json_decode(stripslashes($s), true); 
-                    },
-                    // 6. Trim outer quotes
-                    function($s) { 
-                        return json_decode(trim($s, '"'), true); 
-                    },
-                    // 7. HTML entities
-                    function($s) { 
-                        return json_decode(html_entity_decode($s), true); 
-                    }
-                ];
-
-                foreach ($attempts as $attempt) {
-                    $res = $attempt($raw);
-
-                    $limit = 5;
-                    while (is_string($res) && $limit-- > 0) {
-                        $res = json_decode($res, true);
-                    }
-
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($res)) {
-                        $decoded = $res;
-                        break;
+        // Decode schema JSON
+        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+            $decoded = json_decode($filtered['schema'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+                    $baseUrl = url("/");
+                    if (strtolower($decoded['@type']) === 'product') {
+                        $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+                    } elseif (strtolower($decoded['@type']) === 'category') {
+                        $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
                     }
                 }
-            }
-
-            if (!is_array($decoded)) {
-                $filtered['schema']        = null;
-                $filtered['canonical_url'] = null;
-            } else {
-                // Normalize to array of objects
-                if (!isset($decoded[0])) {
-                    $decoded = [$decoded];
-                }
-
-                // Fix description array -> flat string across all @graph nodes
-                foreach ($decoded as &$schemaItem) {
-                    if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
-
-                    foreach ($schemaItem['@graph'] as &$graph) {
-                        if (!isset($graph['description'])) continue;
-
-                        if (is_array($graph['description'])) {
-                            // Flatten array: remove nulls, strip HTML, join
-                            $graph['description'] = trim(strip_tags(
-                                implode(' ', array_filter(
-                                    $graph['description'],
-                                    fn($v) => !is_null($v) && $v !== ''
-                                ))
-                            ));
-                        } elseif (is_string($graph['description'])) {
-                            // Strip any leftover HTML tags from string descriptions
-                            $graph['description'] = trim(strip_tags($graph['description']));
-                        }
-                    }
-                    unset($graph);
-                }
-                unset($schemaItem);
-
                 $filtered['schema'] = $decoded;
-
-                // Extract canonical URL
-                $canonicalUrl = null;
-                foreach ($decoded as $schemaItem) {
-                    if (!is_array($schemaItem)) continue;
-
-                    if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
-                        foreach ($schemaItem['@graph'] as $graph) {
-                            if (!empty($graph['url'])) {
-                                $canonicalUrl = $graph['url'];
-                                break 2;
-                            }
-                        }
-                    }
-
-                    if (!empty($schemaItem['url'])) {
-                        $canonicalUrl = $schemaItem['url'];
-                        break;
-                    }
-                }
-
-                $filtered['canonical_url'] = $canonicalUrl;
             }
         }
 
@@ -310,9 +156,163 @@ public function getByRelationalId($identifier)
 
     return response()->json([
         'status' => true,
-        'data'   => $seoData
+        'data' => $seoData
     ]);
 }
+
+    // public function getByRelationalId($identifier)
+    // {   
+    //     $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
+
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $path = parse_url($identifier, PHP_URL_PATH);
+    //         $path = ltrim($path, '/');
+
+    //         $seoQuery->where(function ($q) use ($identifier, $path) {
+    //             $q->where('url', $identifier)
+    //             ->orWhere('url', '/' . $path)
+    //             ->orWhere('url', $path);
+    //         });
+    //     } elseif (is_numeric($identifier)) {
+    //         $seoQuery->where('relational_id', $identifier);
+    //     } else {
+    //         $seoQuery->where(function ($q) use ($identifier) {
+    //             $path = ltrim($identifier, '/');
+    //             $q->where('url', $identifier)
+    //             ->orWhere('url', '/' . $path)
+    //             ->orWhere('url', $path);
+    //         });
+    //     }
+
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //         $filtered = $this->filterFields($item);
+
+    //         if (!empty($filtered['schema'])) {
+    //             $raw = $filtered['schema'];
+    //             $decoded = null;
+
+    //             if (is_array($raw)) {
+    //                 $decoded = $raw;
+    //             } else {
+    //                 $raw = trim($raw);
+
+    //                 $attempts = [
+    //                     // 1. Direct decode
+    //                     function($s) { 
+    //                         return json_decode($s, true); 
+    //                     },
+    //                     // 2. Fix unescaped measurement quotes (e.g. 52" -> 52\")
+    //                     function($s) { 
+    //                         $s = preg_replace('/(\d)"/', '$1\\"', $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 3. Fix literal control characters
+    //                     function($s) { 
+    //                         $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 4. Fix both measurement quotes + control characters
+    //                     function($s) {
+    //                         $s = preg_replace('/(\d)"/', '$1\\"', $s);
+    //                         $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 5. stripslashes
+    //                     function($s) { 
+    //                         return json_decode(stripslashes($s), true); 
+    //                     },
+    //                     // 6. Trim outer quotes
+    //                     function($s) { 
+    //                         return json_decode(trim($s, '"'), true); 
+    //                     },
+    //                     // 7. HTML entities
+    //                     function($s) { 
+    //                         return json_decode(html_entity_decode($s), true); 
+    //                     }
+    //                 ];
+
+    //                 foreach ($attempts as $attempt) {
+    //                     $res = $attempt($raw);
+
+    //                     $limit = 5;
+    //                     while (is_string($res) && $limit-- > 0) {
+    //                         $res = json_decode($res, true);
+    //                     }
+
+    //                     if (json_last_error() === JSON_ERROR_NONE && is_array($res)) {
+    //                         $decoded = $res;
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+
+    //             if (!is_array($decoded)) {
+    //                 $filtered['schema']        = null;
+    //                 $filtered['canonical_url'] = null;
+    //             } else {
+    //                 // Normalize to array of objects
+    //                 if (!isset($decoded[0])) {
+    //                     $decoded = [$decoded];
+    //                 }
+
+    //                 // Fix description array -> flat string across all @graph nodes
+    //                 foreach ($decoded as &$schemaItem) {
+    //                     if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
+
+    //                     foreach ($schemaItem['@graph'] as &$graph) {
+    //                         if (!isset($graph['description'])) continue;
+
+    //                         if (is_array($graph['description'])) {
+    //                             // Flatten array: remove nulls, strip HTML, join
+    //                             $graph['description'] = trim(strip_tags(
+    //                                 implode(' ', array_filter(
+    //                                     $graph['description'],
+    //                                     fn($v) => !is_null($v) && $v !== ''
+    //                                 ))
+    //                             ));
+    //                         } elseif (is_string($graph['description'])) {
+    //                             // Strip any leftover HTML tags from string descriptions
+    //                             $graph['description'] = trim(strip_tags($graph['description']));
+    //                         }
+    //                     }
+    //                     unset($graph);
+    //                 }
+    //                 unset($schemaItem);
+
+    //                 $filtered['schema'] = $decoded;
+
+    //                 // Extract canonical URL
+    //                 $canonicalUrl = null;
+    //                 foreach ($decoded as $schemaItem) {
+    //                     if (!is_array($schemaItem)) continue;
+
+    //                     if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+    //                         foreach ($schemaItem['@graph'] as $graph) {
+    //                             if (!empty($graph['url'])) {
+    //                                 $canonicalUrl = $graph['url'];
+    //                                 break 2;
+    //                             }
+    //                         }
+    //                     }
+
+    //                     if (!empty($schemaItem['url'])) {
+    //                         $canonicalUrl = $schemaItem['url'];
+    //                         break;
+    //                     }
+    //                 }
+
+    //                 $filtered['canonical_url'] = $canonicalUrl;
+    //             }
+    //         }
+
+    //         return $filtered;
+    //     });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data'   => $seoData
+    //     ]);
+    // }
 
     /**
      * @OA\Get(
