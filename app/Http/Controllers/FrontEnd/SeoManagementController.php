@@ -193,44 +193,96 @@ public function getByRelationalId($identifier)
         $canonicalUrl = null;
 
         // Decode schema JSON
-        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-            $decoded = json_decode($filtered['schema'], true);
+        // if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+        //     $decoded = json_decode($filtered['schema'], true);
           
-            if (json_last_error() === JSON_ERROR_NONE) {
+        //     if (json_last_error() === JSON_ERROR_NONE) {
   
-                // If schema is an array
-                if (is_array($decoded) && isset($decoded[0])) {
+        //         // If schema is an array
+        //         if (is_array($decoded) && isset($decoded[0])) {
                       
-                    foreach ($decoded as $schemaItem) {
-                        if (isset($schemaItem['url'])) {
-                            $canonicalUrl = $schemaItem['url'];
-                            break; // take first one that has URL
+        //             foreach ($decoded as $schemaItem) {
+        //                 if (isset($schemaItem['url'])) {
+        //                     $canonicalUrl = $schemaItem['url'];
+        //                     break; // take first one that has URL
+        //                 }
+        //             }
+        //         } else {
+                     
+        //             // Single schema object
+        //             if (!empty($decoded['url'])) {
+        //                 $canonicalUrl = config('app.url').'/'.$decoded['url'];
+        //             }
+                   
+        //               if (!empty($decoded['@type']) && !empty($decoded['url'])) {                                           
+        //                 $decoded['url'] = config('app.url').'/'.$decoded['url'];                        
+        //             }
+        //             // Adjust product/category URL if needed
+        //             // if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+        //             //     $baseUrl = url(path: "/");
+        //             //     if (strtolower($decoded['@type']) === 'product') {
+        //             //         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+        //             //     } elseif (strtolower($decoded['@type']) === 'category') {
+        //             //         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+        //             //     }
+        //             // }
+        //         }
+ 
+        //         $filtered['schema'] = $decoded;
+        //     }
+        // }
+        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+
+    $rawSchema = $filtered['schema'];
+
+    // Step 1: Try normal decode
+    $decoded = json_decode($rawSchema, true);
+
+    // Step 2: If failed → maybe double encoded
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $decoded = json_decode(stripslashes($rawSchema), true);
+    }
+
+    // Step 3: If still failed → try removing extra quotes
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $cleaned = trim($rawSchema, '"');
+        $decoded = json_decode($cleaned, true);
+    }
+
+    // Step 4: If still failed → skip safely
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $filtered['schema'] = null;
+    } else {
+
+        // ✅ Extract canonical URL (supports all formats)
+        $canonicalUrl = null;
+
+        if (is_array($decoded)) {
+
+            foreach ($decoded as $schemaItem) {
+
+                // Case: @graph
+                if (isset($schemaItem['@graph'])) {
+                    foreach ($schemaItem['@graph'] as $graphItem) {
+                        if (!empty($graphItem['url'])) {
+                            $canonicalUrl = $graphItem['url'];
+                            break 2;
                         }
                     }
-                } else {
-                     
-                    // Single schema object
-                    if (!empty($decoded['url'])) {
-                        $canonicalUrl = config('app.url').'/'.$decoded['url'];
-                    }
-                   
-                      if (!empty($decoded['@type']) && !empty($decoded['url'])) {                                           
-                        $decoded['url'] = config('app.url').'/'.$decoded['url'];                        
-                    }
-                    // Adjust product/category URL if needed
-                    // if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-                    //     $baseUrl = url(path: "/");
-                    //     if (strtolower($decoded['@type']) === 'product') {
-                    //         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-                    //     } elseif (strtolower($decoded['@type']) === 'category') {
-                    //         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
-                    //     }
-                    // }
                 }
- 
-                $filtered['schema'] = $decoded;
+
+                // Case: direct url
+                if (!empty($schemaItem['url'])) {
+                    $canonicalUrl = $schemaItem['url'];
+                    break;
+                }
             }
         }
+
+        $filtered['schema'] = $decoded;
+        $filtered['canonical_url'] = $canonicalUrl;
+    }
+}
 
         // Attach canonical URL separately
         $filtered['canonical_url'] = $canonicalUrl;
