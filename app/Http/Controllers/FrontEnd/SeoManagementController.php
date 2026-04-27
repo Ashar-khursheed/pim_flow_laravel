@@ -166,6 +166,9 @@ public function getByRelationalId($identifier)
     $seoQuery = SeoManagement::with('seo_secondary_keywords')
         ->orderBy('id', 'desc');
 
+    // =========================
+    // FILTER LOGIC
+    // =========================
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
         $path = parse_url($identifier, PHP_URL_PATH);
         $path = ltrim($path, '/');
@@ -185,10 +188,15 @@ public function getByRelationalId($identifier)
         });
     }
 
+    // =========================
+    // FETCH DATA
+    // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
 
+        // Saare fields lo
         $filtered = $this->filterFields($item) ?? [];
 
+        // Raw schema directly DB se lo (casts/accessors bypass)
         $raw = DB::table('seo_management')
             ->where('id', $item->id)
             ->value('schema');
@@ -199,25 +207,34 @@ public function getByRelationalId($identifier)
             return $filtered;
         }
 
+        // =========================
+        // SCHEMA DECODE
+        // =========================
         $decoded = $this->decodeSchema($raw);
 
         if (!is_array($decoded)) {
-            $filtered['schema']        = null;
+            // Decode bilkul fail ho gaya — raw string rakh lo
+            $filtered['schema']        = $raw;
             $filtered['canonical_url'] = null;
             return $filtered;
         }
 
+        // Normalize to array
         if (!isset($decoded[0])) {
             $decoded = [$decoded];
         }
 
-        // Description clean karo
+        // =========================
+        // CLEAN DESCRIPTIONS
+        // =========================
         foreach ($decoded as &$schemaItem) {
             if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
             foreach ($schemaItem['@graph'] as &$graph) {
                 if (!is_array($graph) || !isset($graph['description'])) continue;
                 if (is_array($graph['description'])) {
-                    $graph['description'] = trim(strip_tags(implode(' ', array_filter($graph['description']))));
+                    $graph['description'] = trim(
+                        strip_tags(implode(' ', array_filter($graph['description'])))
+                    );
                 } elseif (is_string($graph['description'])) {
                     $graph['description'] = trim(strip_tags($graph['description']));
                 }
@@ -226,9 +243,12 @@ public function getByRelationalId($identifier)
         }
         unset($schemaItem);
 
+        // ✅ Parsed schema set karo
         $filtered['schema'] = $decoded;
 
-        // Canonical URL
+        // =========================
+        // CANONICAL URL EXTRACT
+        // =========================
         $canonicalUrl = null;
         foreach ($decoded as $schemaItem) {
             if (!is_array($schemaItem)) continue;
@@ -258,80 +278,51 @@ public function getByRelationalId($identifier)
     );
 }
 
-// ============================================================
-// DECODE — step by step, simple aur safe
-// ============================================================
+// =============================================
+// SCHEMA DECODE HELPER — Corrupted JSON fix
+// =============================================
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // Step 1: Direct decode
+    // Attempt 1: Direct
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 2: Stripslashes (DB mein \" stored ho toh)
-    $str = stripslashes($raw);
-    $decoded = json_decode($str, true);
+    // Attempt 2: stripslashes
+    $decoded = json_decode(stripslashes($raw), true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Stripslashes + inch marks fix (52" -> 52in)
-    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $str);
+    // Attempt 3: 52" jaise inch marks fix karo
+    $fixed = preg_replace_callback(
+        '/(\d+)"/',
+        fn($m) => $m[1] . 'in',
+        $raw
+    );
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 4: Raw + inch marks fix (without stripslashes)
-    $fixed = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $raw);
+    // Attempt 4: stripslashes + inch fix
+    $fixed = preg_replace_callback(
+        '/(\d+)"/',
+        fn($m) => $m[1] . 'in',
+        stripslashes($raw)
+    );
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 5: Control characters remove + stripslashes + inch fix
-    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-    $clean = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $clean);
+    // Attempt 5: Control characters remove
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw);
     $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 6: Log karo debug k liye aur null return
-    \Log::error('Schema decode failed', [
-        'raw_snippet' => substr($raw, 0, 300),
-        'json_error'  => json_last_error_msg()
-    ]);
+    // Attempt 6: Sab ek saath
+    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', stripslashes($raw));
+    $clean = preg_replace_callback('/(\d+)"/', fn($m) => $m[1] . 'in', $clean);
+    $decoded = json_decode($clean, true);
+    if (is_array($decoded)) return $decoded;
 
     return null;
-}
-
-// ============================================================
-// FIX — sab known corruptions handle karo
-// ============================================================
-private function fixJsonString($str)
-{
-    // Fix 1: Inch marks  — 34" -> 34in
-    $str = preg_replace('/(\d+(?:\.\d+)?)"/', '$1in', $str);
-
-    // Fix 2: Description stored as array-string
-    // Pattern after stripslashes: "description": "["<p>...</p>","<p>...</p>"]"
-    // Convert karo clean plain text mein
-    $str = preg_replace_callback(
-        '/"description"\s*:\s*"(\[.*?\])"/s',
-        function ($m) {
-            $inner = $m[1];
-
-            // Pehle JSON decode try karo
-            $arr = json_decode($inner, true);
-            if (is_array($arr)) {
-                $text = trim(strip_tags(implode(' ', array_filter($arr))));
-            } else {
-                // Manual clean — brackets aur quotes hata do, HTML strip karo
-                $text = str_replace(['["', '"]', '","', '\\"', '"'], '', $inner);
-                $text = trim(strip_tags($text));
-                $text = preg_replace('/\s+/', ' ', $text);
-            }
-
-            return '"description": ' . json_encode($text);
-        },
-        $str
-    );
-
-    return $str;
 }
 
     // public function getByRelationalId($identifier)
