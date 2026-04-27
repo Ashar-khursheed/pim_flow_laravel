@@ -326,19 +326,21 @@ private function decodeSchema($raw)
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 2: Stripslashes
+    // Step 2: Stripslashes (DB double-escaped)
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Clean control chars
+    // Step 3: Control chars
     $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
 
     // Fix A: description stored as stringified array
     // "description": "["<p>...</p>"]"  →  "description": ["<p>...</p>"]
     $str = $this->fixStringifiedDescriptionArray($str);
 
-    // Fix B: unescaped inch marks  34" Remote → 34\" Remote
+    // Fix B: unescaped inch marks — 34" Remote → 34\" Remote
+    // Lookahead: NOT a JSON structural char (comma, brace, bracket, digit, colon, quote)
+    // NOTE: space must NOT be in the exclusion — space after " means it's an inch mark
     $str = preg_replace('/(\d)"(?=[^,\}\]\d:"])/', '$1\\"', $str);
 
     $decoded = json_decode($str, true);
@@ -346,7 +348,7 @@ private function decodeSchema($raw)
 
     \Log::error('Schema decode failed', [
         'error'   => json_last_error_msg(),
-        'raw_snippet' => substr($str, 0, 500),
+        'snippet' => substr($str, 0, 500),
     ]);
 
     return null;
@@ -354,25 +356,20 @@ private function decodeSchema($raw)
 
 private function fixStringifiedDescriptionArray(string $str): string
 {
-    $needle = '"description": "';
-    $pos    = strpos($str, $needle);
-
-    // Not found or description doesn't start with [ → nothing to fix
+    $needle     = '"description": "';
+    $pos        = strpos($str, $needle);
     if ($pos === false) return $str;
 
     $valueStart = $pos + strlen($needle);
-
     if (substr($str, $valueStart, 1) !== '[') return $str;
 
-    // Find the closing ]" that ends the broken stringified value
     $closePos = strpos($str, ']"', $valueStart);
     if ($closePos === false) return $str;
 
-    // Splice out the wrapping quotes around the array
     return substr($str, 0, $pos)
         . '"description": '
-        . substr($str, $valueStart, ($closePos - $valueStart) + 1) // the [...] part
-        . substr($str, $closePos + 2); // skip the closing "
+        . substr($str, $valueStart, ($closePos - $valueStart) + 1)
+        . substr($str, $closePos + 2);
 }
     // public function getByRelationalId($identifier)
     // {   
