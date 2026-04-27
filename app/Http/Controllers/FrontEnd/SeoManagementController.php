@@ -189,7 +189,7 @@ public function getByRelationalId($identifier)
 
     $seoData = $seoQuery->get()->map(function ($item) {
         // dd($item->schema);
-        $filtered = $this->filterFields($item);
+        $filtered['schema'] = $item->schema;
 
         $canonicalUrl = null;
 
