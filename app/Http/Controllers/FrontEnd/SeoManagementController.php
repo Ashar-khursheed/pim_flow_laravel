@@ -188,125 +188,50 @@ public function getByRelationalId($identifier)
     }
 
     $seoData = $seoQuery->get()->map(function ($item) {
-        // dd($item->schema);
-        $filtered['schema'] = $item->schema;
+        $filtered = $this->filterFields($item);
 
         $canonicalUrl = null;
 
         // Decode schema JSON
-        // if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-        //     $decoded = json_decode($filtered['schema'], true);
+        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+            $decoded = json_decode($filtered['schema'], true);
           
-        //     if (json_last_error() === JSON_ERROR_NONE) {
+            if (json_last_error() === JSON_ERROR_NONE) {
   
-        //         // If schema is an array
-        //         if (is_array($decoded) && isset($decoded[0])) {
+                // If schema is an array
+                if (is_array($decoded) && isset($decoded[0])) {
                       
-        //             foreach ($decoded as $schemaItem) {
-        //                 if (isset($schemaItem['url'])) {
-        //                     $canonicalUrl = $schemaItem['url'];
-        //                     break; // take first one that has URL
-        //                 }
-        //             }
-        //         } else {
-                     
-        //             // Single schema object
-        //             if (!empty($decoded['url'])) {
-        //                 $canonicalUrl = config('app.url').'/'.$decoded['url'];
-        //             }
-                   
-        //               if (!empty($decoded['@type']) && !empty($decoded['url'])) {                                           
-        //                 $decoded['url'] = config('app.url').'/'.$decoded['url'];                        
-        //             }
-        //             // Adjust product/category URL if needed
-        //             // if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-        //             //     $baseUrl = url(path: "/");
-        //             //     if (strtolower($decoded['@type']) === 'product') {
-        //             //         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-        //             //     } elseif (strtolower($decoded['@type']) === 'category') {
-        //             //         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
-        //             //     }
-        //             // }
-        //         }
- 
-        //         $filtered['schema'] = $decoded;
-        //     }
-        // }
-       if (!empty($filtered['schema'])) {
-
-    $rawSchema = $filtered['schema'];
-    $decoded = null;
-
-    // ===============================
-    // STEP 1: Normalize input type
-    // ===============================
-    if (is_array($rawSchema)) {
-        $decoded = $rawSchema;
-    }
-
-    if (is_string($rawSchema)) {
-
-        // Try normal JSON decode
-        $decoded = json_decode($rawSchema, true);
-
-        // If failed → try stripslashes (double encoded JSON)
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $decoded = json_decode(stripslashes($rawSchema), true);
-        }
-
-        // If still failed → trim quotes (stringified JSON)
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $decoded = json_decode(trim($rawSchema, '"'), true);
-        }
-
-        // Final fallback → HTML decode
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $decoded = json_decode(html_entity_decode($rawSchema), true);
-        }
-    }
-
-    // ===============================
-    // STEP 2: Validate decoded JSON
-    // ===============================
-    if (json_last_error() !== JSON_ERROR_NONE || empty($decoded)) {
-        $filtered['schema'] = null;
-        $filtered['canonical_url'] = null;
-    } else {
-
-        // ===============================
-        // STEP 3: Extract canonical URL
-        // ===============================
-        $canonicalUrl = null;
-
-        if (is_array($decoded)) {
-
-            foreach ($decoded as $schemaItem) {
-
-                // Case: @graph structure
-                if (isset($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
-                    foreach ($schemaItem['@graph'] as $graphItem) {
-                        if (!empty($graphItem['url'])) {
-                            $canonicalUrl = $graphItem['url'];
-                            break 2;
+                    foreach ($decoded as $schemaItem) {
+                        if (isset($schemaItem['url'])) {
+                            $canonicalUrl = $schemaItem['url'];
+                            break; // take first one that has URL
                         }
                     }
+                } else {
+                     
+                    // Single schema object
+                    if (!empty($decoded['url'])) {
+                        $canonicalUrl = config('app.url').'/'.$decoded['url'];
+                    }
+                   
+                      if (!empty($decoded['@type']) && !empty($decoded['url'])) {                                           
+                        $decoded['url'] = config('app.url').'/'.$decoded['url'];                        
+                    }
+                    // Adjust product/category URL if needed
+                    // if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+                    //     $baseUrl = url(path: "/");
+                    //     if (strtolower($decoded['@type']) === 'product') {
+                    //         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+                    //     } elseif (strtolower($decoded['@type']) === 'category') {
+                    //         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+                    //     }
+                    // }
                 }
-
-                // Case: direct URL
-                if (!empty($schemaItem['url'])) {
-                    $canonicalUrl = $schemaItem['url'];
-                    break;
-                }
+ 
+                $filtered['schema'] = $decoded;
             }
         }
 
-        // ===============================
-        // STEP 4: Final assign
-        // ===============================
-        $filtered['schema'] = $decoded;
-        $filtered['canonical_url'] = $canonicalUrl;
-    }
-}
         // Attach canonical URL separately
         $filtered['canonical_url'] = $canonicalUrl;
 
