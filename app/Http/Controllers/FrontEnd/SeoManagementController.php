@@ -200,94 +200,137 @@ public function getByRelationalId($identifier)
     // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
 
-        // Bypass ALL casts, accessors, mutators — raw schema from DB
-        $raw = DB::table('seo_management')
+     $filtered = $this->filterFields($item) ?? [];
+
+        // bypass ALL casts, accessors, mutators
+        $filtered['schema'] = DB::table('seo_management')
             ->where('id', $item->id)
             ->value('schema');
+        if (!empty($filtered['schema'])) {
+          
 
-        if (empty($raw)) {
-            return null;
-        }
+            $raw = $filtered['schema'];
+            $decoded = null;
 
-        // =========================
-        // 1. NORMAL JSON DECODE
-        // =========================
-        $decoded = is_array($raw) ? $raw : json_decode($raw, true);
-
-        // =========================
-        // 2. FIX ATTEMPT
-        // =========================
-        if (json_last_error() !== JSON_ERROR_NONE) {
-
-            $clean = str_replace(
-                ["\n", "\r", "\t"],
-                ["\\n", "\\r", "\\t"],
-                $raw
-            );
-
-            $clean = preg_replace('/(\d)"/', '$1\\"', $clean);
-
-            $decoded = json_decode($clean, true);
-        }
-
-        // =========================
-        // 3. FINAL FALLBACK
-        // =========================
-        if (!is_array($decoded)) {
-            return null;
-        }
-
-        // =========================
-        // 4. NORMALIZE SCHEMA
-        // =========================
-        if (!isset($decoded[0])) {
-            $decoded = [$decoded];
-        }
-
-        foreach ($decoded as &$schemaItem) {
-
-            if (!is_array($schemaItem) || empty($schemaItem['@graph'])) {
-                continue;
+            // =========================
+            // 1. NORMAL JSON DECODE
+            // =========================
+            if (is_array($raw)) {
+                $decoded = $raw;
+            } else {
+                $decoded = json_decode($raw, true);
             }
 
-            foreach ($schemaItem['@graph'] as &$graph) {
+            // =========================
+            // 2. FIX ATTEMPT
+            // =========================
+            if (json_last_error() !== JSON_ERROR_NONE) {
 
-                if (!is_array($graph) || !isset($graph['description'])) {
+                $clean = str_replace(
+                    ["\n", "\r", "\t"],
+                    ["\\n", "\\r", "\\t"],
+                    $raw
+                );
+
+                $clean = preg_replace('/(\d)"/', '$1\\"', $clean);
+
+                $decoded = json_decode($clean, true);
+            }
+
+            // =========================
+            // 3. FINAL FALLBACK (IMPORTANT)
+            // =========================
+            if (!is_array($decoded)) {
+
+                $filtered['schema'] = [
+                    'raw_schema' => $raw,
+                    'parsed'     => null
+                ];
+
+                $filtered['canonical_url'] = null;
+
+                return $filtered;
+            }
+
+            // =========================
+            // 4. NORMALIZE SCHEMA
+            // =========================
+            if (!isset($decoded[0])) {
+                $decoded = [$decoded];
+            }
+
+            foreach ($decoded as &$schemaItem) {
+
+                if (!is_array($schemaItem) || empty($schemaItem['@graph'])) {
                     continue;
                 }
 
-                if (is_array($graph['description'])) {
+                foreach ($schemaItem['@graph'] as &$graph) {
 
-                    $graph['description'] = trim(
-                        strip_tags(
-                            implode(' ', array_filter($graph['description']))
-                        )
-                    );
+                    if (!is_array($graph) || !isset($graph['description'])) {
+                        continue;
+                    }
 
-                } elseif (is_string($graph['description'])) {
+                    if (is_array($graph['description'])) {
 
-                    $graph['description'] = trim(strip_tags($graph['description']));
+                        $graph['description'] = trim(
+                            strip_tags(
+                                implode(' ', array_filter($graph['description']))
+                            )
+                        );
+
+                    } elseif (is_string($graph['description'])) {
+
+                        $graph['description'] = trim(strip_tags($graph['description']));
+                    }
+                }
+
+                unset($graph);
+            }
+
+            unset($schemaItem);
+
+
+    $filtered['schema'] = $decoded;
+
+            // =========================
+            // 5. CANONICAL URL EXTRACTION
+            // =========================
+            $canonicalUrl = null;
+
+            foreach ($decoded as $schemaItem) {
+
+                if (!is_array($schemaItem)) continue;
+
+                if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+
+                    foreach ($schemaItem['@graph'] as $graph) {
+
+                        if (!empty($graph['url'])) {
+                            $canonicalUrl = $graph['url'];
+                            break 2;
+                        }
+                    }
+                }
+
+                if (!empty($schemaItem['url'])) {
+                    $canonicalUrl = $schemaItem['url'];
+                    break;
                 }
             }
 
-            unset($graph);
+            $filtered['canonical_url'] = $canonicalUrl;
         }
 
-        unset($schemaItem);
+        return $filtered;
+    });
 
-        // ✅ Sirf schema return karo — koi extra field nahi
-        return $decoded;
-
-    })->filter()->values(); // null entries remove karo
-
-    // ✅ JSON_UNESCAPED_SLASHES — clean response, koi \/ nahi
-    return response()->json(
-        ['status' => true, 'data' => $seoData],
-        200,
-        [],
-        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-    );
+    return response()->json([
+        'status' => true,
+        'data'   => $seoData
+    ]);
 }
+
     // public function getByRelationalId($identifier)
     // {   
     //     $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
