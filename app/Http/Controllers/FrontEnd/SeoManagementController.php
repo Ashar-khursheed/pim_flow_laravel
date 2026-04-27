@@ -232,70 +232,90 @@ public function getByRelationalId($identifier)
         //     }
         // }
         if (!empty($filtered['schema'])) {
+            $raw = $filtered['schema'];
+            $decoded = null;
 
-    $raw = $filtered['schema'];
-    $decoded = null;
+            if (is_array($raw)) {
+                $decoded = $raw;
+            } else {
+                $raw = trim($raw);
+                
+                // Define decoding attempts to handle various malformed JSON cases
+                $attempts = [
+                    // 1. Direct decode
+                    function($s) { return json_decode($s, true); },
+                    // 2. Fix unescaped measurement quotes (e.g. 52" -> 52\")
+                    function($s) { 
+                        $s = preg_replace('/(\d)"/', '$1\\"', $s);
+                        return json_decode($s, true);
+                    },
+                    // 3. Fix literal control characters (newlines, tabs) which are invalid in JSON strings
+                    function($s) { 
+                        $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
+                        return json_decode($s, true);
+                    },
+                    // 4. Handle escaped slashes if they were literal backslashes in DB
+                    function($s) { return json_decode(stripslashes($s), true); },
+                    // 5. Trim outer quotes (sometimes happens with double encoding or manual DB entries)
+                    function($s) { return json_decode(trim($s, '"'), true); },
+                    // 6. Handle HTML entities (e.g. &quot;)
+                    function($s) { return json_decode(html_entity_decode($s), true); }
+                ];
 
-    // 1️⃣ If already array (rare case)
-    if (is_array($raw)) {
-        $decoded = $raw;
-    } else {
+                foreach ($attempts as $attempt) {
+                    $jsonString = $raw;
+                    $res = $attempt($jsonString);
 
-        // 2️⃣ Clean string
-        $raw = trim($raw);
+                    // Handle recursive/double-encoded JSON strings
+                    $limit = 5;
+                    while (is_string($res) && $limit-- > 0) {
+                        $jsonString = $res;
+                        $res = json_decode($jsonString, true);
+                    }
 
-        // 3️⃣ Try direct decode
-        $decoded = json_decode($raw, true);
-
-        // 4️⃣ If failed → fix escaped slashes
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $decoded = json_decode(stripslashes($raw), true);
-        }
-
-        // 5️⃣ If still failed → remove outer quotes
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $decoded = json_decode(trim($raw, '"'), true);
-        }
-
-        // 6️⃣ If STILL failed → force clean (last attempt)
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $clean = html_entity_decode($raw);
-            $decoded = json_decode($clean, true);
-        }
-    }
-
-    // ❌ If still invalid
-    if (!is_array($decoded)) {
-        $filtered['schema'] = null;
-        $filtered['canonical_url'] = null;
-    } else {
-
-        // ✅ optional: normalize multiple schema objects
-        $filtered['schema'] = $decoded;
-
-        // ✅ extract canonical URL safely
-        $canonicalUrl = null;
-
-        foreach ($decoded as $schemaItem) {
-
-            if (!empty($schemaItem['@graph'])) {
-                foreach ($schemaItem['@graph'] as $graph) {
-                    if (!empty($graph['url'])) {
-                        $canonicalUrl = $graph['url'];
-                        break 2;
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($res)) {
+                        $decoded = $res;
+                        break;
                     }
                 }
             }
 
-            if (!empty($schemaItem['url'])) {
-                $canonicalUrl = $schemaItem['url'];
-                break;
+            // Fallback if decoding still failed
+            if (!is_array($decoded)) {
+                $filtered['schema'] = null;
+                $filtered['canonical_url'] = null;
+            } else {
+                // Normalize to an array of objects to simplify further processing
+                // (e.g. if single object is provided instead of array)
+                if (is_array($decoded) && !isset($decoded[0])) {
+                    $decoded = [$decoded];
+                }
+
+                $filtered['schema'] = $decoded;
+
+                // Extract canonical URL safely
+                $canonicalUrl = null;
+                foreach ($decoded as $schemaItem) {
+                    if (is_array($schemaItem)) {
+                        // Check in @graph
+                        if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+                            foreach ($schemaItem['@graph'] as $graph) {
+                                if (!empty($graph['url'])) {
+                                    $canonicalUrl = $graph['url'];
+                                    break 2;
+                                }
+                            }
+                        }
+                        // Check direct url property
+                        if (!empty($schemaItem['url'])) {
+                            $canonicalUrl = $schemaItem['url'];
+                            break;
+                        }
+                    }
+                }
+                $filtered['canonical_url'] = $canonicalUrl;
             }
         }
-
-        $filtered['canonical_url'] = $canonicalUrl;
-    }
-}
 
         // Attach canonical URL separately
 
