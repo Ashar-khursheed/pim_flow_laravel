@@ -318,6 +318,39 @@ public function getByRelationalId($identifier)
 
 //     return null;
 // }
+private function fixKnownIssues($str)
+{
+    // Fix 1: Description — "["<p>...</p>",null]" pattern
+    // Greedy match: "[ se shuru, ]" pe khatam (followed by comma/newline/brace)
+    $str = preg_replace_callback(
+        '/"description"\s*:\s*"\[(.+?)\]"(?=\s*[,\n\r}])/s',
+        function ($m) {
+            $inner = $m[1];
+
+            // HTML entities decode karo
+            $inner = html_entity_decode($inner, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            // HTML tags strip karo
+            $text = strip_tags($inner);
+
+            // Baqi garbage clean karo: quotes, null, brackets
+            $text = str_replace(['"', 'null', '\\'], ['', '', ''], $text);
+
+            // Whitespace normalize karo
+            $text = preg_replace('/\s+/', ' ', trim($text));
+
+            return '"description": ' . json_encode($text, JSON_UNESCAPED_UNICODE);
+        },
+        $str
+    );
+
+    // Fix 2: Inch marks — 48" Super -> 48in Super
+    // Sirf woh " jo digit ke baad aur JSON closing chars se pehle NAHI hain
+    $str = preg_replace('/(\d)"(?=[^,\}\]\s"\\\\])/', '$1in', $str);
+
+    return $str;
+}
+
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
@@ -331,62 +364,29 @@ private function decodeSchema($raw)
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Fix description array-string + inch marks
+    // Step 3: Stripslashes + fixes
     $fixed = $this->fixKnownIssues($str);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 4: Raw pe bhi same fix
+    // Step 4: Raw + fixes (without stripslashes)
     $fixed2 = $this->fixKnownIssues($raw);
     $decoded = json_decode($fixed2, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 5: Control chars + sab fixes
+    // Step 5: Control chars + stripslashes + fixes
     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
     $clean = $this->fixKnownIssues($clean);
     $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
 
     \Log::error('Schema decode failed', [
-        'error'   => json_last_error_msg(),
-        'snippet' => substr($fixed, 0, 500),
+        'error'        => json_last_error_msg(),
+        'raw_snippet'  => substr($raw, 0, 300),
+        'fixed_snippet'=> substr($fixed, 0, 300),
     ]);
 
     return null;
-}
-
-private function fixKnownIssues($str)
-{
-    // Fix 1: description jo string-wrapped array hai
-    // "description": "["<p>...</p>","<p>...</p>"]"
-    // => "description": "clean plain text"
-    $str = preg_replace_callback(
-        '/"description"\s*:\s*"(\[(?:[^"\\\\]|\\\\.)*\])"/s',
-        function ($matches) {
-            $inner = $matches[1];
-
-            // Pehle JSON decode try karo
-            $arr = json_decode($inner, true);
-            if (is_array($arr)) {
-                $text = trim(strip_tags(implode(' ', array_filter($arr))));
-            } else {
-                // Manual: brackets hata do, HTML strip karo
-                $text = preg_replace('/^\["|"\]$/', '', $inner);
-                $text = preg_replace('/"[,\s]*"/', ' ', $text);
-                $text = trim(strip_tags(html_entity_decode($text, ENT_QUOTES, 'UTF-8')));
-                $text = preg_replace('/\s+/', ' ', $text);
-            }
-
-            return '"description": ' . json_encode($text, JSON_UNESCAPED_UNICODE);
-        },
-        $str
-    );
-
-    // Fix 2: Inch marks — 34" Remote -> 34in Remote
-    // Sirf woh quotes jo digit ke baad aur JSON closing chars se pehle NAHI hain
-    $str = preg_replace('/(\d)"(?=[^,\}\]\s"\\\\])/', '$1in', $str);
-
-    return $str;
 }
 
     // public function getByRelationalId($identifier)
