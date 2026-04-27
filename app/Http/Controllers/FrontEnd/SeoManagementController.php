@@ -281,6 +281,43 @@ public function getByRelationalId($identifier)
 // =============================================
 // SCHEMA DECODE HELPER — Corrupted JSON fix
 // =============================================
+// private function decodeSchema($raw)
+// {
+//     if (is_array($raw)) return $raw;
+
+//     // Step 1: Direct
+//     $decoded = json_decode($raw, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 2: Stripslashes pehle
+//     $str = stripslashes($raw);
+//     $decoded = json_decode($str, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 3: Stripslashes ke baad inch fix
+//     // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
+//     $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
+//     $decoded = json_decode($fixed, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 4: Raw pe inch fix (without stripslashes)
+//     $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
+//     $decoded = json_decode($fixed2, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 5: Dono ek saath + control chars
+//     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+//     $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
+//     $decoded = json_decode($clean, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     \Log::error('Schema decode failed', [
+//         'error'   => json_last_error_msg(),
+//         'snippet' => substr($fixed, 0, 300),
+//     ]);
+
+//     return null;
+// }
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
@@ -289,31 +326,58 @@ private function decodeSchema($raw)
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 2: Stripslashes pehle
+    // Step 2: Stripslashes
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Stripslashes ke baad inch fix
-    // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
+    // Step 3: Inch fix after stripslashes
     $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
     $decoded = json_decode($fixed, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 4: Raw pe inch fix (without stripslashes)
+    // Step 4: Inch fix on raw
     $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
     $decoded = json_decode($fixed2, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 5: Dono ek saath + control chars
+    // Step 5: Control chars + inch fix
     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
     $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
     $decoded = json_decode($clean, true);
     if (is_array($decoded)) return $decoded;
 
+    // ✅ Step 6: Fix description stored as stringified JSON array
+    // Converts  "description": "["<p>...</p>","<p>...</p>"]"
+    // Into      "description": ["<p>...</p>","<p>...</p>"]
+    $step6 = preg_replace_callback(
+        '/"description"\s*:\s*"(\[(?:[^"\\\\]|\\\\.|"(?:[^"\\\\]|\\\\.)*")*\])"/s',
+        function ($m) {
+            $innerJson = $m[1]; // the [...] part still has escape issues
+            // Try to decode the inner array directly
+            $arr = json_decode($innerJson, true);
+            if (!is_array($arr)) {
+                $arr = json_decode(stripslashes($innerJson), true);
+            }
+            if (is_array($arr)) {
+                return '"description": ' . json_encode($arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+            return $m[0]; // fallback, leave untouched
+        },
+        $clean // use the already-cleaned string from Step 5
+    );
+
+    $decoded = json_decode($step6, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Step 7: Inch fix on top of Step 6
+    $step7 = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $step6);
+    $decoded = json_decode($step7, true);
+    if (is_array($decoded)) return $decoded;
+
     \Log::error('Schema decode failed', [
         'error'   => json_last_error_msg(),
-        'snippet' => substr($fixed, 0, 300),
+        'snippet' => substr($step7, 0, 300),
     ]);
 
     return null;
