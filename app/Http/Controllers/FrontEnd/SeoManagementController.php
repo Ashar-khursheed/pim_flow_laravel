@@ -196,46 +196,140 @@ public function getByRelationalId($identifier)
     }
 
     // =========================
-    // FETCH
+    // FETCH DATA
     // =========================
- $seoData = $seoQuery->get()->map(function ($item) {
+    $seoData = $seoQuery->get()->map(function ($item) {
 
-    $filtered = $this->filterFields($item) ?? [];
+     $filtered = $this->filterFields($item) ?? [];
 
-    // RAW SAFE ACCESS (NO DB CALL)
-    $raw = $item->getRawOriginal('schema');
+        // bypass ALL casts, accessors, mutators
+        $filtered['schema'] = DB::table('seo_management')
+            ->where('id', $item->id)
+            ->value('schema');
+        if (!empty($filtered['schema'])) {
+          
 
-    $decoded = json_decode($raw, true);
+            $raw = $filtered['schema'];
+            $decoded = null;
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $decoded = json_decode(stripslashes($raw), true);
-    }
+            // =========================
+            // 1. NORMAL JSON DECODE
+            // =========================
+            if (is_array($raw)) {
+                $decoded = $raw;
+            } else {
+                $decoded = json_decode($raw, true);
+            }
 
-    $filtered['schema'] = is_array($decoded) ? $decoded : null;
+            // =========================
+            // 2. FIX ATTEMPT
+            // =========================
+            if (json_last_error() !== JSON_ERROR_NONE) {
 
-    // canonical url
-    $filtered['canonical_url'] = null;
+                $clean = str_replace(
+                    ["\n", "\r", "\t"],
+                    ["\\n", "\\r", "\\t"],
+                    $raw
+                );
 
-    if (is_array($decoded)) {
-        foreach ($decoded as $schemaItem) {
-            if (!empty($schemaItem['@graph'])) {
-                foreach ($schemaItem['@graph'] as $graph) {
-                    if (!empty($graph['url'])) {
-                        $filtered['canonical_url'] = $graph['url'];
-                        break 2;
+                $clean = preg_replace('/(\d)"/', '$1\\"', $clean);
+
+                $decoded = json_decode($clean, true);
+            }
+
+            // =========================
+            // 3. FINAL FALLBACK (IMPORTANT)
+            // =========================
+            if (!is_array($decoded)) {
+
+                $filtered['schema'] = [
+                    'raw_schema' => $raw,
+                    'parsed'     => null
+                ];
+
+                $filtered['canonical_url'] = null;
+
+                return $filtered;
+            }
+
+            // =========================
+            // 4. NORMALIZE SCHEMA
+            // =========================
+            if (!isset($decoded[0])) {
+                $decoded = [$decoded];
+            }
+
+            foreach ($decoded as &$schemaItem) {
+
+                if (!is_array($schemaItem) || empty($schemaItem['@graph'])) {
+                    continue;
+                }
+
+                foreach ($schemaItem['@graph'] as &$graph) {
+
+                    if (!is_array($graph) || !isset($graph['description'])) {
+                        continue;
+                    }
+
+                    if (is_array($graph['description'])) {
+
+                        $graph['description'] = trim(
+                            strip_tags(
+                                implode(' ', array_filter($graph['description']))
+                            )
+                        );
+
+                    } elseif (is_string($graph['description'])) {
+
+                        $graph['description'] = trim(strip_tags($graph['description']));
                     }
                 }
-            }
-        }
-    }
 
-    return $filtered;
-});
+                unset($graph);
+            }
+
+            unset($schemaItem);
+
+    $filtered['schema'] = $decoded;
+
+            // =========================
+            // 5. CANONICAL URL EXTRACTION
+            // =========================
+            $canonicalUrl = null;
+
+            foreach ($decoded as $schemaItem) {
+
+                if (!is_array($schemaItem)) continue;
+
+                if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+
+                    foreach ($schemaItem['@graph'] as $graph) {
+
+                        if (!empty($graph['url'])) {
+                            $canonicalUrl = $graph['url'];
+                            break 2;
+                        }
+                    }
+                }
+
+                if (!empty($schemaItem['url'])) {
+                    $canonicalUrl = $schemaItem['url'];
+                    break;
+                }
+            }
+
+            $filtered['canonical_url'] = $canonicalUrl;
+        }
+
+        return $filtered;
+    });
+
     return response()->json([
         'status' => true,
-        'data' => $seoData
+        'data'   => $seoData
     ]);
 }
+
     // public function getByRelationalId($identifier)
     // {   
     //     $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
