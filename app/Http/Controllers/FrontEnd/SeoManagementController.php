@@ -326,48 +326,53 @@ private function decodeSchema($raw)
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 2: Stripslashes (removes all backslash escaping from DB storage)
+    // Step 2: Stripslashes
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Remove control characters
+    // Step 3: Clean control chars
     $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
 
-    // ─── Fix A: Re-escape inch marks instead of replacing with 'in' ───
-    // "QuietQube 34" Remote"  →  "QuietQube 34\" Remote"
-    // Lookahead: after digit-quote, next char is NOT a JSON structural char
+    // Fix A: description stored as stringified array
+    // "description": "["<p>...</p>"]"  →  "description": ["<p>...</p>"]
+    $str = $this->fixStringifiedDescriptionArray($str);
+
+    // Fix B: unescaped inch marks  34" Remote → 34\" Remote
     $str = preg_replace('/(\d)"(?=[^,\}\]\d:"])/', '$1\\"', $str);
 
-    // ─── Fix B: Unwrap description stored as stringified JSON array ───
-    // "description": "["<p>...</p>","<p>...</p>"]"
-    //             →  "description": ["<p>...</p>","<p>...</p>"]
-    //
-    // Pattern explanation:
-    // "description": "   — opening of the broken value
-    // (                  — capture start
-    //   \[               — literal [
-    //   (?:[^"]*"[^"]*") — zero or more pairs of: non-quotes, then "string"
-    //   *[^"]*           — trailing non-quote chars before ]
-    //   \]               — literal ]
-    // )                  — capture end
-    // "                  — closing quote of the broken value
-    $str = preg_replace(
-        '/"description"\s*:\s*"(\[(?:[^"]*"[^"]*")*[^"]*\])"/s',
-        '"description": $1',
-        $str
-    );
-
-    // Step 3: Both fixes applied — try decode
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
     \Log::error('Schema decode failed', [
         'error'   => json_last_error_msg(),
-        'snippet' => substr($str, 0, 500),
+        'raw_snippet' => substr($str, 0, 500),
     ]);
 
     return null;
+}
+
+private function fixStringifiedDescriptionArray(string $str): string
+{
+    $needle = '"description": "';
+    $pos    = strpos($str, $needle);
+
+    // Not found or description doesn't start with [ → nothing to fix
+    if ($pos === false) return $str;
+
+    $valueStart = $pos + strlen($needle);
+
+    if (substr($str, $valueStart, 1) !== '[') return $str;
+
+    // Find the closing ]" that ends the broken stringified value
+    $closePos = strpos($str, ']"', $valueStart);
+    if ($closePos === false) return $str;
+
+    // Splice out the wrapping quotes around the array
+    return substr($str, 0, $pos)
+        . '"description": '
+        . substr($str, $valueStart, ($closePos - $valueStart) + 1) // the [...] part
+        . substr($str, $closePos + 2); // skip the closing "
 }
     // public function getByRelationalId($identifier)
     // {   
