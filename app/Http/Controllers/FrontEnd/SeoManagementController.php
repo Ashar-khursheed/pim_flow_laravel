@@ -326,63 +326,49 @@ private function decodeSchema($raw)
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 2: Stripslashes
+    // Step 2: Stripslashes (removes all backslash escaping from DB storage)
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Inch fix after stripslashes
-    $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
-    $decoded = json_decode($fixed, true);
-    if (is_array($decoded)) return $decoded;
+    // Remove control characters
+    $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
 
-    // Step 4: Inch fix on raw
-    $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
-    $decoded = json_decode($fixed2, true);
-    if (is_array($decoded)) return $decoded;
+    // ─── Fix A: Re-escape inch marks instead of replacing with 'in' ───
+    // "QuietQube 34" Remote"  →  "QuietQube 34\" Remote"
+    // Lookahead: after digit-quote, next char is NOT a JSON structural char
+    $str = preg_replace('/(\d)"(?=[^,\}\]\d:"])/', '$1\\"', $str);
 
-    // Step 5: Control chars + inch fix
-    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-    $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
-    $decoded = json_decode($clean, true);
-    if (is_array($decoded)) return $decoded;
-
-    // ✅ Step 6: Fix description stored as stringified JSON array
-    // Converts  "description": "["<p>...</p>","<p>...</p>"]"
-    // Into      "description": ["<p>...</p>","<p>...</p>"]
-    $step6 = preg_replace_callback(
-        '/"description"\s*:\s*"(\[(?:[^"\\\\]|\\\\.|"(?:[^"\\\\]|\\\\.)*")*\])"/s',
-        function ($m) {
-            $innerJson = $m[1]; // the [...] part still has escape issues
-            // Try to decode the inner array directly
-            $arr = json_decode($innerJson, true);
-            if (!is_array($arr)) {
-                $arr = json_decode(stripslashes($innerJson), true);
-            }
-            if (is_array($arr)) {
-                return '"description": ' . json_encode($arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            }
-            return $m[0]; // fallback, leave untouched
-        },
-        $clean // use the already-cleaned string from Step 5
+    // ─── Fix B: Unwrap description stored as stringified JSON array ───
+    // "description": "["<p>...</p>","<p>...</p>"]"
+    //             →  "description": ["<p>...</p>","<p>...</p>"]
+    //
+    // Pattern explanation:
+    // "description": "   — opening of the broken value
+    // (                  — capture start
+    //   \[               — literal [
+    //   (?:[^"]*"[^"]*") — zero or more pairs of: non-quotes, then "string"
+    //   *[^"]*           — trailing non-quote chars before ]
+    //   \]               — literal ]
+    // )                  — capture end
+    // "                  — closing quote of the broken value
+    $str = preg_replace(
+        '/"description"\s*:\s*"(\[(?:[^"]*"[^"]*")*[^"]*\])"/s',
+        '"description": $1',
+        $str
     );
 
-    $decoded = json_decode($step6, true);
-    if (is_array($decoded)) return $decoded;
-
-    // Step 7: Inch fix on top of Step 6
-    $step7 = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $step6);
-    $decoded = json_decode($step7, true);
+    // Step 3: Both fixes applied — try decode
+    $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
     \Log::error('Schema decode failed', [
         'error'   => json_last_error_msg(),
-        'snippet' => substr($step7, 0, 300),
+        'snippet' => substr($str, 0, 500),
     ]);
 
     return null;
 }
-
     // public function getByRelationalId($identifier)
     // {   
     //     $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
