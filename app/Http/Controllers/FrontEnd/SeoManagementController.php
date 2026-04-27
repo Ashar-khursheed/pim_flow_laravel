@@ -198,54 +198,32 @@ public function getByRelationalId($identifier)
     // =========================
     // FETCH
     // =========================
-   $seoData = $seoQuery->get()->map(function ($item) {
+ $seoData = $seoQuery->get()->map(function ($item) {
 
     $filtered = $this->filterFields($item) ?? [];
 
-    // DIRECT RAW VALUE FROM DB (NO ACCESSORS / NO WRAPPERS)
-    $raw = DB::table('seo_management')
-        ->where('id', $item->id)
-        ->value('schema');
+    // RAW SAFE ACCESS (NO DB CALL)
+    $raw = $item->getRawOriginal('schema');
 
-    $decoded = null;
+    $decoded = json_decode($raw, true);
 
-    if ($raw) {
-
-        // 1st decode
-        $decoded = json_decode($raw, true);
-
-        // 2nd decode (handles double encoded JSON)
-        if (is_string($decoded)) {
-            $decoded = json_decode($decoded, true);
-        }
-
-        // fallback cleanup if broken JSON
-        if (json_last_error() !== JSON_ERROR_NONE) {
-
-            $clean = stripslashes($raw);
-            $clean = str_replace(["\r", "\n", "\t"], '', $clean);
-
-            $decoded = json_decode($clean, true);
-        }
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $decoded = json_decode(stripslashes($raw), true);
     }
 
-    // FORCE VALID ARRAY STRUCTURE ONLY
-    if (!is_array($decoded)) {
-        $filtered['schema'] = null;
-    } else {
-        $filtered['schema'] = $decoded;
-    }
+    $filtered['schema'] = is_array($decoded) ? $decoded : null;
 
-    // OPTIONAL: canonical URL
+    // canonical url
     $filtered['canonical_url'] = null;
 
-    foreach ((array)$decoded as $schemaItem) {
-
-        if (!empty($schemaItem['@graph'])) {
-            foreach ($schemaItem['@graph'] as $graph) {
-                if (!empty($graph['url'])) {
-                    $filtered['canonical_url'] = $graph['url'];
-                    break 2;
+    if (is_array($decoded)) {
+        foreach ($decoded as $schemaItem) {
+            if (!empty($schemaItem['@graph'])) {
+                foreach ($schemaItem['@graph'] as $graph) {
+                    if (!empty($graph['url'])) {
+                        $filtered['canonical_url'] = $graph['url'];
+                        break 2;
+                    }
                 }
             }
         }
@@ -253,7 +231,6 @@ public function getByRelationalId($identifier)
 
     return $filtered;
 });
-
     return response()->json([
         'status' => true,
         'data' => $seoData
