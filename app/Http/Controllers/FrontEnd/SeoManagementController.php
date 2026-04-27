@@ -318,75 +318,102 @@ public function getByRelationalId($identifier)
 
 //     return null;
 // }
-private function fixKnownIssues($str)
-{
-    // Fix 1: Description — "["<p>...</p>",null]" pattern
-    // Greedy match: "[ se shuru, ]" pe khatam (followed by comma/newline/brace)
-    $str = preg_replace_callback(
-        '/"description"\s*:\s*"\[(.+?)\]"(?=\s*[,\n\r}])/s',
-        function ($m) {
-            $inner = $m[1];
-
-            // HTML entities decode karo
-            $inner = html_entity_decode($inner, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-            // HTML tags strip karo
-            $text = strip_tags($inner);
-
-            // Baqi garbage clean karo: quotes, null, brackets
-            $text = str_replace(['"', 'null', '\\'], ['', '', ''], $text);
-
-            // Whitespace normalize karo
-            $text = preg_replace('/\s+/', ' ', trim($text));
-
-            return '"description": ' . json_encode($text, JSON_UNESCAPED_UNICODE);
-        },
-        $str
-    );
-
-    // Fix 2: Inch marks — 48" Super -> 48in Super
-    // Sirf woh " jo digit ke baad aur JSON closing chars se pehle NAHI hain
-    $str = preg_replace('/(\d)"(?=[^,\}\]\s"\\\\])/', '$1in', $str);
-
-    return $str;
-}
-
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // Step 1: Direct
-    $decoded = json_decode($raw, true);
-    if (is_array($decoded)) return $decoded;
+    // 1. Basic cleanup
+    $raw = preg_replace('/[\x00-\x1F\x7F]/u', '', $raw);
+    $raw = str_replace(["\r", "\n", "\\n"], '', $raw);
 
-    // Step 2: Stripslashes
-    $str = stripslashes($raw);
-    $decoded = json_decode($str, true);
-    if (is_array($decoded)) return $decoded;
+    // 2. Try multiple decode passes (handles double encoding)
+    $decoded = $this->multiJsonDecode($raw);
+    if (!is_array($decoded)) return null;
 
-    // Step 3: Stripslashes + fixes
-    $fixed = $this->fixKnownIssues($str);
-    $decoded = json_decode($fixed, true);
-    if (is_array($decoded)) return $decoded;
+    // 3. Clean structure recursively
+    $decoded = $this->cleanArray($decoded);
 
-    // Step 4: Raw + fixes (without stripslashes)
-    $fixed2 = $this->fixKnownIssues($raw);
-    $decoded = json_decode($fixed2, true);
-    if (is_array($decoded)) return $decoded;
+    return $decoded;
+}
 
-    // Step 5: Control chars + stripslashes + fixes
-    $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-    $clean = $this->fixKnownIssues($clean);
-    $decoded = json_decode($clean, true);
-    if (is_array($decoded)) return $decoded;
+/**
+ * Try decoding multiple layers of JSON
+ */
+private function multiJsonDecode($data)
+{
+    for ($i = 0; $i < 3; $i++) {
+        if (!is_string($data)) break;
 
-    \Log::error('Schema decode failed', [
-        'error'        => json_last_error_msg(),
-        'raw_snippet'  => substr($raw, 0, 300),
-        'fixed_snippet'=> substr($fixed, 0, 300),
-    ]);
+        $trimmed = trim($data, "\"'");
 
-    return null;
+        $json = json_decode($trimmed, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $data = $json;
+        } else {
+            break;
+        }
+    }
+
+    return $data;
+}
+
+/**
+ * Clean recursion + fix description field
+ */
+private function cleanArray($data)
+{
+    if (!is_array($data)) return $data;
+
+    foreach ($data as $key => $value) {
+
+        // If value is array -> recurse
+        if (is_array($value)) {
+            $data[$key] = $this->cleanArray($value);
+            continue;
+        }
+
+        // Clean strings
+        if (is_string($value)) {
+
+            // remove HTML tags
+            $value = strip_tags($value);
+
+            // remove leftover escaped quotes
+            $value = str_replace(['\"', '\\\"'], '"', $value);
+
+            // remove extra spaces
+            $value = trim($value);
+
+            $data[$key] = $value;
+        }
+
+        // SPECIAL CASE: description field fix
+        if ($key === 'description') {
+            $data[$key] = $this->fixDescription($data[$key]);
+        }
+    }
+
+    return $data;
+}
+
+/**
+ * Fix weird description array stored as string
+ */
+private function fixDescription($value)
+{
+    if (!is_string($value)) return $value;
+
+    $value = trim($value, "\"'");
+
+    $json = json_decode($value, true);
+
+    if (is_array($json)) {
+        return array_values(array_filter($json, function ($v) {
+            return $v !== null && $v !== '';
+        }));
+    }
+
+    return strip_tags($value);
 }
 
     // public function getByRelationalId($identifier)
