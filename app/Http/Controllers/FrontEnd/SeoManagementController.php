@@ -198,14 +198,13 @@ public function getByRelationalId($identifier)
     // FETCH DATA
     // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
-  dd([
-    'db_schema' => $item->getRawOriginal('schema'),
-    'eloquent_schema' => $item->schema,
-    'after_filter' => $this->filterFields($item)['schema'] ?? null
-]);
-      $filtered = $this->filterFields($item) ?? [];
 
-        $filtered['schema'] = $item->schema ?? null;
+     $filtered = $this->filterFields($item) ?? [];
+
+        // bypass ALL casts, accessors, mutators
+        $filtered['schema'] = DB::table('seo_management')
+            ->where('id', $item->id)
+            ->value('schema');
         if (!empty($filtered['schema'])) {
           
 
