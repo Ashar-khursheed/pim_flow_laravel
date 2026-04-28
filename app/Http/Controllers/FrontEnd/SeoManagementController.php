@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\SeoManagement;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 class SeoManagementController extends Controller
 {
     /**
@@ -161,90 +162,368 @@ class SeoManagementController extends Controller
 // }
 
 public function getByRelationalId($identifier)
-{   
-    $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords')
+        ->orderBy('id', 'desc');
 
+    // =========================
+    // FILTER LOGIC
+    // =========================
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-        // Handle full URL
         $path = parse_url($identifier, PHP_URL_PATH);
         $path = ltrim($path, '/');
-
         $seoQuery->where(function ($q) use ($identifier, $path) {
-            $q->where('url', $identifier)         // full URL
-              ->orWhere('url', '/' . $path)       // with leading slash
-              ->orWhere('url', $path);            // without leading slash
+            $q->where('url', $identifier)
+              ->orWhere('url', '/' . $path)
+              ->orWhere('url', $path);
         });
     } elseif (is_numeric($identifier)) {
-        // Handle numeric relational_id
         $seoQuery->where('relational_id', $identifier);
     } else {
-        // Handle string identifier
-        $seoQuery->where(function ($q) use ($identifier) {
-            $path = ltrim($identifier, '/');
+        $path = ltrim($identifier, '/');
+        $seoQuery->where(function ($q) use ($identifier, $path) {
             $q->where('url', $identifier)
               ->orWhere('url', '/' . $path)
               ->orWhere('url', $path);
         });
     }
 
+    // =========================
+    // FETCH DATA
+    // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
-        $filtered = $this->filterFields($item);
 
-        $canonicalUrl = null;
+        // Saare fields lo
+        $filtered = $this->filterFields($item) ?? [];
 
-        // Decode schema JSON
-        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-            $decoded = json_decode($filtered['schema'], true);
-          
-            if (json_last_error() === JSON_ERROR_NONE) {
-  
-                // If schema is an array
-                if (is_array($decoded) && isset($decoded[0])) {
-                      
-                    foreach ($decoded as $schemaItem) {
-                        if (isset($schemaItem['url'])) {
-                            $canonicalUrl = $schemaItem['url'];
-                            break; // take first one that has URL
-                        }
-                    }
-                } else {
-                     
-                    // Single schema object
-                    if (!empty($decoded['url'])) {
-                        $canonicalUrl = config('app.url').'/'.$decoded['url'];
-                    }
-                   
-                      if (!empty($decoded['@type']) && !empty($decoded['url'])) {                                           
-                        $decoded['url'] = config('app.url').'/'.$decoded['url'];                        
-                    }
-                    // Adjust product/category URL if needed
-                    // if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-                    //     $baseUrl = url(path: "/");
-                    //     if (strtolower($decoded['@type']) === 'product') {
-                    //         $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-                    //     } elseif (strtolower($decoded['@type']) === 'category') {
-                    //         $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
-                    //     }
-                    // }
-                }
- 
-                $filtered['schema'] = $decoded;
-            }
+        // Raw schema directly DB se lo (casts/accessors bypass)
+        $raw = DB::table('seo_management')
+            ->where('id', $item->id)
+            ->value('schema');
+
+        if (empty($raw)) {
+            $filtered['schema']        = null;
+            $filtered['canonical_url'] = null;
+            return $filtered;
         }
 
-        // Attach canonical URL separately
+        // =========================
+        // SCHEMA DECODE
+        // =========================
+        $decoded = $this->decodeSchema($raw);
+
+        if (!is_array($decoded)) {
+            // Decode bilkul fail ho gaya — raw string rakh lo
+            $filtered['schema']        = $raw;
+            $filtered['canonical_url'] = null;
+            return $filtered;
+        }
+
+        // Normalize to array
+        if (!isset($decoded[0])) {
+            $decoded = [$decoded];
+        }
+
+        // =========================
+        // CLEAN DESCRIPTIONS
+        // =========================
+        foreach ($decoded as &$schemaItem) {
+            if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
+            foreach ($schemaItem['@graph'] as &$graph) {
+                if (!is_array($graph) || !isset($graph['description'])) continue;
+                if (is_array($graph['description'])) {
+                    $graph['description'] = trim(
+                        strip_tags(implode(' ', array_filter($graph['description'])))
+                    );
+                } elseif (is_string($graph['description'])) {
+                    $graph['description'] = trim(strip_tags($graph['description']));
+                }
+            }
+            unset($graph);
+        }
+        unset($schemaItem);
+
+        // ✅ Parsed schema set karo
+        $filtered['schema'] = $decoded;
+
+        // =========================
+        // CANONICAL URL EXTRACT
+        // =========================
+        $canonicalUrl = null;
+        foreach ($decoded as $schemaItem) {
+            if (!is_array($schemaItem)) continue;
+            if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+                foreach ($schemaItem['@graph'] as $graph) {
+                    if (!empty($graph['url'])) {
+                        $canonicalUrl = $graph['url'];
+                        break 2;
+                    }
+                }
+            }
+            if (!empty($schemaItem['url'])) {
+                $canonicalUrl = $schemaItem['url'];
+                break;
+            }
+        }
         $filtered['canonical_url'] = $canonicalUrl;
 
         return $filtered;
     });
 
-    return response()->json([
-        'status' => true,
-        'data' => $seoData
-    ]);
+    return response()->json(
+        ['status' => true, 'data' => $seoData],
+        200,
+        [],
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+    );
 }
 
+// =============================================
+// SCHEMA DECODE HELPER — Corrupted JSON fix
+// =============================================
+// private function decodeSchema($raw)
+// {
+//     if (is_array($raw)) return $raw;
 
+//     // Step 1: Direct
+//     $decoded = json_decode($raw, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 2: Stripslashes pehle
+//     $str = stripslashes($raw);
+//     $decoded = json_decode($str, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 3: Stripslashes ke baad inch fix
+//     // 52" Pass -> 52in Pass  (lekin "15" ya "4.6" safe rahega)
+//     $fixed = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $str);
+//     $decoded = json_decode($fixed, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 4: Raw pe inch fix (without stripslashes)
+//     $fixed2 = preg_replace('/(\d)\"(?=[^,\}\]\d])/', '$1in', $raw);
+//     $decoded = json_decode($fixed2, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     // Step 5: Dono ek saath + control chars
+//     $clean = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+//     $clean = preg_replace('/(\d)"(?=[^,\}\]\d])/', '$1in', $clean);
+//     $decoded = json_decode($clean, true);
+//     if (is_array($decoded)) return $decoded;
+
+//     \Log::error('Schema decode failed', [
+//         'error'   => json_last_error_msg(),
+//         'snippet' => substr($fixed, 0, 300),
+//     ]);
+
+//     return null;
+// }
+private function decodeSchema($raw)
+{
+    if (is_array($raw)) return $raw;
+
+    // Step 1: Direct
+    $decoded = json_decode($raw, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Step 2: Stripslashes (DB double-escaped)
+    $str = stripslashes($raw);
+    $decoded = json_decode($str, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Step 3: Control chars
+    $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
+
+    // Fix A: description stored as stringified array
+    // "description": "["<p>...</p>"]"  →  "description": ["<p>...</p>"]
+    $str = $this->fixStringifiedDescriptionArray($str);
+
+    // Fix B: unescaped inch marks — 34" Remote → 34\" Remote
+    // Lookahead: NOT a JSON structural char (comma, brace, bracket, digit, colon, quote)
+    // NOTE: space must NOT be in the exclusion — space after " means it's an inch mark
+    $str = preg_replace('/(\d)"(?=[^,\}\]\d:"])/', '$1\\"', $str);
+
+    $decoded = json_decode($str, true);
+    if (is_array($decoded)) return $decoded;
+
+    \Log::error('Schema decode failed', [
+        'error'   => json_last_error_msg(),
+        'snippet' => substr($str, 0, 500),
+    ]);
+
+    return null;
+}
+
+private function fixStringifiedDescriptionArray(string $str): string
+{
+    $needle     = '"description": "';
+    $pos        = strpos($str, $needle);
+    if ($pos === false) return $str;
+
+    $valueStart = $pos + strlen($needle);
+    if (substr($str, $valueStart, 1) !== '[') return $str;
+
+    $closePos = strpos($str, ']"', $valueStart);
+    if ($closePos === false) return $str;
+
+    return substr($str, 0, $pos)
+        . '"description": '
+        . substr($str, $valueStart, ($closePos - $valueStart) + 1)
+        . substr($str, $closePos + 2);
+}
+    // public function getByRelationalId($identifier)
+    // {   
+    //     $seoQuery = SeoManagement::with('seo_secondary_keywords')->orderBy('id', 'desc');
+
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $path = parse_url($identifier, PHP_URL_PATH);
+    //         $path = ltrim($path, '/');
+
+    //         $seoQuery->where(function ($q) use ($identifier, $path) {
+    //             $q->where('url', $identifier)
+    //             ->orWhere('url', '/' . $path)
+    //             ->orWhere('url', $path);
+    //         });
+    //     } elseif (is_numeric($identifier)) {
+    //         $seoQuery->where('relational_id', $identifier);
+    //     } else {
+    //         $seoQuery->where(function ($q) use ($identifier) {
+    //             $path = ltrim($identifier, '/');
+    //             $q->where('url', $identifier)
+    //             ->orWhere('url', '/' . $path)
+    //             ->orWhere('url', $path);
+    //         });
+    //     }
+
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //         $filtered = $this->filterFields($item);
+
+    //         if (!empty($filtered['schema'])) {
+    //             $raw = $filtered['schema'];
+    //             $decoded = null;
+
+    //             if (is_array($raw)) {
+    //                 $decoded = $raw;
+    //             } else {
+    //                 $raw = trim($raw);
+
+    //                 $attempts = [
+    //                     // 1. Direct decode
+    //                     function($s) { 
+    //                         return json_decode($s, true); 
+    //                     },
+    //                     // 2. Fix unescaped measurement quotes (e.g. 52" -> 52\")
+    //                     function($s) { 
+    //                         $s = preg_replace('/(\d)"/', '$1\\"', $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 3. Fix literal control characters
+    //                     function($s) { 
+    //                         $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 4. Fix both measurement quotes + control characters
+    //                     function($s) {
+    //                         $s = preg_replace('/(\d)"/', '$1\\"', $s);
+    //                         $s = str_replace(["\n", "\r", "\t"], ["\\n", "\\r", "\\t"], $s);
+    //                         return json_decode($s, true);
+    //                     },
+    //                     // 5. stripslashes
+    //                     function($s) { 
+    //                         return json_decode(stripslashes($s), true); 
+    //                     },
+    //                     // 6. Trim outer quotes
+    //                     function($s) { 
+    //                         return json_decode(trim($s, '"'), true); 
+    //                     },
+    //                     // 7. HTML entities
+    //                     function($s) { 
+    //                         return json_decode(html_entity_decode($s), true); 
+    //                     }
+    //                 ];
+
+    //                 foreach ($attempts as $attempt) {
+    //                     $res = $attempt($raw);
+
+    //                     $limit = 5;
+    //                     while (is_string($res) && $limit-- > 0) {
+    //                         $res = json_decode($res, true);
+    //                     }
+
+    //                     if (json_last_error() === JSON_ERROR_NONE && is_array($res)) {
+    //                         $decoded = $res;
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+
+    //             if (!is_array($decoded)) {
+    //                 $filtered['schema']        = null;
+    //                 $filtered['canonical_url'] = null;
+    //             } else {
+    //                 // Normalize to array of objects
+    //                 if (!isset($decoded[0])) {
+    //                     $decoded = [$decoded];
+    //                 }
+
+    //                 // Fix description array -> flat string across all @graph nodes
+    //                 foreach ($decoded as &$schemaItem) {
+    //                     if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
+
+    //                     foreach ($schemaItem['@graph'] as &$graph) {
+    //                         if (!isset($graph['description'])) continue;
+
+    //                         if (is_array($graph['description'])) {
+    //                             // Flatten array: remove nulls, strip HTML, join
+    //                             $graph['description'] = trim(strip_tags(
+    //                                 implode(' ', array_filter(
+    //                                     $graph['description'],
+    //                                     fn($v) => !is_null($v) && $v !== ''
+    //                                 ))
+    //                             ));
+    //                         } elseif (is_string($graph['description'])) {
+    //                             // Strip any leftover HTML tags from string descriptions
+    //                             $graph['description'] = trim(strip_tags($graph['description']));
+    //                         }
+    //                     }
+    //                     unset($graph);
+    //                 }
+    //                 unset($schemaItem);
+
+    //                 $filtered['schema'] = $decoded;
+
+    //                 // Extract canonical URL
+    //                 $canonicalUrl = null;
+    //                 foreach ($decoded as $schemaItem) {
+    //                     if (!is_array($schemaItem)) continue;
+
+    //                     if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+    //                         foreach ($schemaItem['@graph'] as $graph) {
+    //                             if (!empty($graph['url'])) {
+    //                                 $canonicalUrl = $graph['url'];
+    //                                 break 2;
+    //                             }
+    //                         }
+    //                     }
+
+    //                     if (!empty($schemaItem['url'])) {
+    //                         $canonicalUrl = $schemaItem['url'];
+    //                         break;
+    //                     }
+    //                 }
+
+    //                 $filtered['canonical_url'] = $canonicalUrl;
+    //             }
+    //         }
+
+    //         return $filtered;
+    //     });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data'   => $seoData
+    //     ]);
+    // }
 
     /**
      * @OA\Get(
