@@ -322,7 +322,7 @@ private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
 
-    // Step 1: Direct
+    // Step 1: Direct parse
     $decoded = json_decode($raw, true);
     if (is_array($decoded)) return $decoded;
 
@@ -331,19 +331,14 @@ private function decodeSchema($raw)
     $decoded = json_decode($str, true);
     if (is_array($decoded)) return $decoded;
 
-    // Step 3: Control chars
-    $str = preg_replace('/[\x00-\x1F\x7F]/u', '', $str);
-
-    // Fix A: description stored as stringified array
-    // "description": "["<p>...</p>"]"  →  "description": ["<p>...</p>"]
-    $str = $this->fixStringifiedDescriptionArray($str);
-
-    // Fix B: unescaped inch marks — 34" Remote → 34\" Remote
-    // Lookahead: NOT a JSON structural char (comma, brace, bracket, digit, colon, quote)
-    // NOTE: space must NOT be in the exclusion — space after " means it's an inch mark
-    $str = preg_replace('/(\d)"(?=[^,\}\]\d:"])/', '$1\\"', $str);
-
+    // Step 3: Apply all fixers in sequence
+    $str = $this->sanitizeSchema($str);
     $decoded = json_decode($str, true);
+    if (is_array($decoded)) return $decoded;
+
+    // Step 4: Try on original raw with sanitize
+    $str2 = $this->sanitizeSchema($raw);
+    $decoded = json_decode($str2, true);
     if (is_array($decoded)) return $decoded;
 
     \Log::error('Schema decode failed', [
@@ -354,22 +349,71 @@ private function decodeSchema($raw)
     return null;
 }
 
-private function fixStringifiedDescriptionArray(string $str): string
+private function sanitizeSchema(string $str): string
 {
-    $needle     = '"description": "';
-    $pos        = strpos($str, $needle);
-    if ($pos === false) return $str;
+    // 1. Remove control characters (but keep \n \r \t)
+    $str = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $str);
 
-    $valueStart = $pos + strlen($needle);
-    if (substr($str, $valueStart, 1) !== '[') return $str;
+    // 2. Fix %22 used as quote inside JSON string values (URL encoding leak)
+    //    e.g. "url": "https://example.com/path\%22  →  "url": "https://example.com/path"
+    $str = str_replace('\%22', '"', $str);
+    $str = str_replace('%22', '"', $str);
 
-    $closePos = strpos($str, ']"', $valueStart);
-    if ($closePos === false) return $str;
+    // 3. Fix ALL stringified description arrays (not just first occurrence)
+    //    Pattern: "description": "[\"<p>...</p>\"]"  →  "description": ["<p>...</p>"]
+    $str = $this->fixAllStringifiedArrayFields($str, ['description', 'text', 'content']);
 
-    return substr($str, 0, $pos)
-        . '"description": '
-        . substr($str, $valueStart, ($closePos - $valueStart) + 1)
-        . substr($str, $closePos + 2);
+    // 4. Fix unescaped inch marks after digits
+    //    12.75" (L)  →  12.75\" (L)
+    //    Must NOT fire on: closing quote of a JSON value ("value": "Silver")
+    //    Safe rule: digit followed by " followed by space or letter
+    $str = preg_replace('/(\d)"(?=\s|[a-zA-Z\(])/', '$1\\"', $str);
+
+    return $str;
+}
+
+/**
+ * Fixes fields like "description": "[\"...\"]" → "description": ["..."]
+ * Handles ALL occurrences, not just the first one.
+ * Works for any field name passed in $fields array.
+ */
+private function fixAllStringifiedArrayFields(string $str, array $fields): string
+{
+    foreach ($fields as $field) {
+        $needle = '"' . $field . '": "';
+        $offset = 0;
+
+        while (($pos = strpos($str, $needle, $offset)) !== false) {
+            $valueStart = $pos + strlen($needle);
+
+            // Check if value starts with [ (stringified array)
+            if (substr($str, $valueStart, 1) !== '[') {
+                $offset = $pos + 1;
+                continue;
+            }
+
+            // Find the closing ]" — the end of the stringified array
+            $closePos = strpos($str, ']"', $valueStart);
+            if ($closePos === false) {
+                $offset = $pos + 1;
+                continue;
+            }
+
+            // Extract the raw stringified array content including [ and ]
+            $arrayContent = substr($str, $valueStart, ($closePos - $valueStart) + 1);
+
+            // Replace the stringified version with the raw array
+            $before = substr($str, 0, $pos);
+            $after  = substr($str, $closePos + 2); // skip ]"
+
+            $str = $before . '"' . $field . '": ' . $arrayContent . $after;
+
+            // Move offset past the fix we just made
+            $offset = strlen($before) + strlen('"' . $field . '": ') + strlen($arrayContent);
+        }
+    }
+
+    return $str;
 }
     // public function getByRelationalId($identifier)
     // {   
