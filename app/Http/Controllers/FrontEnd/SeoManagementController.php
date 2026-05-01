@@ -193,10 +193,17 @@ public function getByRelationalId($identifier)
     // =========================
     $seoData = $seoQuery->get()->map(function ($item) {
 
-        // Saare fields lo
+        // Saare fields lo and clean "undefined" strings
         $filtered = $this->filterFields($item) ?? [];
+        
+        // Deep clean "undefined" strings from all top-level fields
+        foreach ($filtered as $key => $value) {
+            if (is_string($value) && strtolower(trim($value)) === 'undefined') {
+                $filtered[$key] = null;
+            }
+        }
 
-        // Raw schema directly DB se lo (casts/accessors bypass)
+        // Raw schema directly DB se lo
         $raw = DB::table('seo_management')
             ->where('id', $item->id)
             ->value('schema');
@@ -213,7 +220,6 @@ public function getByRelationalId($identifier)
         $decoded = $this->decodeSchema($raw);
 
         if (!is_array($decoded)) {
-            // Decode bilkul fail ho gaya — raw string rakh lo
             $filtered['schema']        = $raw;
             $filtered['canonical_url'] = null;
             return $filtered;
@@ -225,21 +231,62 @@ public function getByRelationalId($identifier)
         }
 
         // =========================
-        // CLEAN DESCRIPTIONS
+        // CLEAN & FIX SCHEMA DATA
         // =========================
+        $baseUrl = rtrim(url('/'), '/');
+        
         foreach ($decoded as &$schemaItem) {
-            if (!is_array($schemaItem) || empty($schemaItem['@graph'])) continue;
-            foreach ($schemaItem['@graph'] as &$graph) {
-                if (!is_array($graph) || !isset($graph['description'])) continue;
-                if (is_array($graph['description'])) {
-                    $graph['description'] = trim(
-                        strip_tags(implode(' ', array_filter($graph['description'])))
-                    );
-                } elseif (is_string($graph['description'])) {
-                    $graph['description'] = trim(strip_tags($graph['description']));
+            if (!is_array($schemaItem)) continue;
+
+            // 1. Fix top-level URLs in schema item
+            if (isset($schemaItem['url']) && is_string($schemaItem['url'])) {
+                if (str_starts_with($schemaItem['url'], '//')) {
+                    $schemaItem['url'] = 'https:' . $schemaItem['url'];
                 }
             }
-            unset($graph);
+
+            // 2. Handle @graph if exists
+            if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
+                foreach ($schemaItem['@graph'] as &$graph) {
+                    if (!is_array($graph)) continue;
+
+                    // Fix "undefined" and URLs in graph nodes
+                    foreach ($graph as $gKey => $gValue) {
+                        if (is_string($gValue)) {
+                            if (strtolower(trim($gValue)) === 'undefined') {
+                                $graph[$gKey] = null;
+                            } elseif ($gKey === 'url' && str_starts_with($gValue, '//')) {
+                                $graph[$gKey] = 'https:' . $gValue;
+                            }
+                        }
+                    }
+
+                    // Clean descriptions
+                    if (isset($graph['description'])) {
+                        if (is_array($graph['description'])) {
+                            $graph['description'] = trim(
+                                strip_tags(implode(' ', array_filter($graph['description'])))
+                            );
+                        } elseif (is_string($graph['description'])) {
+                            $graph['description'] = trim(strip_tags($graph['description']));
+                        }
+                    }
+                }
+                unset($graph);
+            } else {
+                // 3. Handle non-graph items (flattened structure)
+                foreach ($schemaItem as $sKey => $sValue) {
+                    if (is_string($sValue)) {
+                        if (strtolower(trim($sValue)) === 'undefined') {
+                            $schemaItem[$sKey] = null;
+                        }
+                    }
+                }
+                
+                if (isset($schemaItem['description'])) {
+                    $schemaItem['description'] = trim(strip_tags($schemaItem['description']));
+                }
+            }
         }
         unset($schemaItem);
 
@@ -252,6 +299,8 @@ public function getByRelationalId($identifier)
         $canonicalUrl = null;
         foreach ($decoded as $schemaItem) {
             if (!is_array($schemaItem)) continue;
+            
+            // Try @graph first
             if (!empty($schemaItem['@graph']) && is_array($schemaItem['@graph'])) {
                 foreach ($schemaItem['@graph'] as $graph) {
                     if (!empty($graph['url'])) {
@@ -260,11 +309,23 @@ public function getByRelationalId($identifier)
                     }
                 }
             }
+            
+            // Try top level url
             if (!empty($schemaItem['url'])) {
                 $canonicalUrl = $schemaItem['url'];
                 break;
             }
         }
+
+        // Final URL cleanup for canonical
+        if ($canonicalUrl) {
+            if (str_starts_with($canonicalUrl, '//')) {
+                $canonicalUrl = 'https:' . $canonicalUrl;
+            } elseif (!str_starts_with($canonicalUrl, 'http')) {
+                $canonicalUrl = $baseUrl . '/' . ltrim($canonicalUrl, '/');
+            }
+        }
+        
         $filtered['canonical_url'] = $canonicalUrl;
 
         return $filtered;
@@ -870,7 +931,7 @@ private function fixStringifiedArrayFields(string $str, array $fields): string
 
     private function filterFields($item)
     {
-        return [
+        $fields = [
             'id' => $item->id,
             'relational_id' => $item->relational_id,
             'relational_type' => $item->relational_type,
@@ -889,6 +950,15 @@ private function fixStringifiedArrayFields(string $str, array $fields): string
             'tags' => $item->tags,
             'schema' => $item->schema
         ];
+
+        // Ensure "undefined" strings are null
+        foreach ($fields as $key => $value) {
+            if (is_string($value) && strtolower(trim($value)) === 'undefined') {
+                $fields[$key] = null;
+            }
+        }
+
+        return $fields;
     }
 
 
