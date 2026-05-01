@@ -351,27 +351,24 @@ private function decodeSchema($raw)
 
 private function sanitizeSchema(string $str): string
 {
-    // 1. Remove control characters (but keep \n \r \t)
+    // 1. Remove bad control characters (preserve \n \r \t)
     $str = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $str);
 
-    // 2. Fix %22 used as quote inside JSON string values (URL encoding leak)
-    //    e.g. "url": "https://example.com/path\%22  →  "url": "https://example.com/path"
-    $str = str_replace('\%22', '"', $str);
-    $str = str_replace('%22', '"', $str);
+    // 2. Fix %22 / \%22 in URLs
+    $str = str_replace(['\%22', '%22'], '"', $str);
 
-    // 3. Fix ALL stringified description arrays (not just first occurrence)
-    //    Pattern: "description": "[\"<p>...</p>\"]"  →  "description": ["<p>...</p>"]
+    // 3. Fix ALL stringified array fields
     $str = $this->fixAllStringifiedArrayFields($str, ['description', 'text', 'content']);
 
-    // 4. Fix unescaped inch marks after digits
-    //    12.75" (L)  →  12.75\" (L)
-    //    Must NOT fire on: closing quote of a JSON value ("value": "Silver")
-    //    Safe rule: digit followed by " followed by space or letter
-    $str = preg_replace('/(\d)"(?=\s|[a-zA-Z\(])/', '$1\\"', $str);
+    // 4. Fix unescaped inch marks after digits — comprehensive version
+    //    Targets: digit followed by unescaped " followed by anything that isn't a JSON structural char
+    //    JSON structural after closing quote: , } ] \n \r space
+    //    An inch mark will typically be followed by: space, letter, (, ), ,  
+    //    Key insight: look-behind to ensure the " is NOT already preceded by backslash
+    $str = preg_replace('/(?<!\\\\)(\d)"(?=[^:{\[\n\r]|$)/', '$1\\"', $str);
 
     return $str;
 }
-
 /**
  * Fixes fields like "description": "[\"...\"]" → "description": ["..."]
  * Handles ALL occurrences, not just the first one.
