@@ -321,25 +321,37 @@ public function getByRelationalId($identifier)
 private function decodeSchema($raw)
 {
     if (is_array($raw)) return $raw;
+    if (!is_string($raw) || trim($raw) === '') return null;
+
+    $raw = trim($raw);
 
     // Step 1: Direct parse
     $decoded = json_decode($raw, true);
-    if (is_array($decoded)) return $decoded;
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
 
     // Step 2: Stripslashes (DB double-escaped)
     $str = stripslashes($raw);
     $decoded = json_decode($str, true);
-    if (is_array($decoded)) return $decoded;
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
 
-    // Step 3: Apply all fixers in sequence
-    $str = $this->sanitizeSchema($str);
-    $decoded = json_decode($str, true);
-    if (is_array($decoded)) return $decoded;
+    // Step 3: Deep sanitize on stripslashed version
+    $sanitized = $this->sanitizeSchema($str);
+    $decoded = json_decode($sanitized, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
 
-    // Step 4: Try on original raw with sanitize
-    $str2 = $this->sanitizeSchema($raw);
-    $decoded = json_decode($str2, true);
-    if (is_array($decoded)) return $decoded;
+    // Step 4: Deep sanitize on original raw
+    $sanitized2 = $this->sanitizeSchema($raw);
+    $decoded = json_decode($sanitized2, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
+
+    // Step 5: Aggressive fix — fix inch marks in "name" fields specifically
+    $aggressive = $this->fixInchMarksAggressive($str);
+    $decoded = json_decode($aggressive, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
+
+    // Step 6: Nuclear option — try to extract JSON objects via bracket matching
+    $extracted = $this->extractJsonFromRaw($raw);
+    if (is_array($extracted) && !empty($extracted)) return $extracted;
 
     \Log::error('Schema decode failed', [
         'error'   => json_last_error_msg(),
@@ -349,6 +361,10 @@ private function decodeSchema($raw)
     return null;
 }
 
+/**
+ * Sanitize corrupted JSON schema string.
+ * Handles: control chars, stringified arrays, inch marks, etc.
+ */
 private function sanitizeSchema(string $str): string
 {
     // 1. Remove bad control characters (preserve \n \r \t)
@@ -357,56 +373,255 @@ private function sanitizeSchema(string $str): string
     // 2. Fix %22 / \%22 in URLs
     $str = str_replace(['\%22', '%22'], '"', $str);
 
-    // 3. Fix ALL stringified array fields
-    $str = $this->fixAllStringifiedArrayFields($str, ['description', 'text', 'content']);
+    // 3. Fix stringified array fields: "description": "[\"...\"]" → "description": ["..."]
+    $str = $this->fixStringifiedArrayFields($str, ['description', 'text', 'content']);
 
-    // 4. Fix unescaped inch marks after digits — comprehensive version
-    //    Targets: digit followed by unescaped " followed by anything that isn't a JSON structural char
-    //    JSON structural after closing quote: , } ] \n \r space
-    //    An inch mark will typically be followed by: space, letter, (, ), ,  
-    //    Key insight: look-behind to ensure the " is NOT already preceded by backslash
-    $str = preg_replace('/(?<!\\\\)(\d)"(?=[^:{\[\n\r]|$)/', '$1\\"', $str);
+    // 4. Fix unescaped inch marks (e.g., 2-1/2", 24 Ga or 12.75\" (L))
+    //    Strategy: find "name": "...X"..." patterns where X" is an inch mark
+    $str = $this->fixInchMarksInValues($str);
 
     return $str;
 }
+
 /**
- * Fixes fields like "description": "[\"...\"]" → "description": ["..."]
- * Handles ALL occurrences, not just the first one.
- * Works for any field name passed in $fields array.
+ * Fix unescaped inch/quote marks inside JSON string values.
+ * Walks through the string character by character to find unescaped quotes
+ * that appear inside string values (after digits or fractions).
  */
-private function fixAllStringifiedArrayFields(string $str, array $fields): string
+private function fixInchMarksInValues(string $str): string
+{
+    // Pattern: digit or fraction followed by " that is NOT at end of a JSON value
+    // We look for: digit" followed by a non-JSON-structural character
+    // JSON structural after a closing quote: , } ] : whitespace followed by key
+    // Inch mark typically followed by: space+letter, comma+space+digit, parenthesis
+
+    // This regex targets: a digit followed by " followed by something that indicates
+    // the quote is NOT the closing quote of a JSON string value
+    // Specifically: digit " (comma-space-or letter-or open-paren) but NOT (comma-" or comma-newline or })
+    $str = preg_replace_callback(
+        '/(\d)"((?:,\s*\d)|(?:\s+[A-Za-z(])|(?:\s*\()|(?:\\\\"))/',
+        function ($m) {
+            return $m[1] . '\\"' . $m[2];
+        },
+        $str
+    );
+
+    return $str;
+}
+
+/**
+ * Aggressive inch mark fixer — targets specific known patterns in product names
+ * like: 2-1/2", 24 Ga  or  Half-size, 2-1/2", 24
+ */
+private function fixInchMarksAggressive(string $str): string
+{
+    // First apply standard sanitize
+    $str = $this->sanitizeSchema($str);
+
+    // Fix pattern: fraction/number followed by " then comma (e.g., 2-1/2", 24)
+    $str = preg_replace('/(\d)"(\s*,\s*\d)/', '$1\\"$2', $str);
+
+    // Fix pattern: number followed by " then space and letter (e.g., 2" Anti or 10.38" (L))
+    $str = preg_replace('/(\d)"(\s+[A-Za-z(])/', '$1\\"$2', $str);
+
+    // Fix pattern: number followed by \" then space (already escaped but double-check)
+    // This handles cases where \\" appears instead of \"
+    $str = preg_replace('/(\d)\\\\\\\\+"/', '$1\\"', $str);
+
+    return $str;
+}
+
+/**
+ * Nuclear option: Extract valid JSON objects from a raw string by finding
+ * balanced { } or [ ] blocks and attempting to parse each one.
+ */
+private function extractJsonFromRaw(string $raw): ?array
+{
+    $raw = trim($raw);
+
+    // Try stripslashes version too
+    $attempts = [$raw, stripslashes($raw)];
+
+    foreach ($attempts as $str) {
+        $str = trim($str);
+
+        // If it starts with [ try to find balanced brackets
+        if (str_starts_with($str, '[') || str_starts_with($str, '{')) {
+            // Try progressively trimming from the end
+            $result = $this->tryParseWithTruncation($str);
+            if ($result !== null) return $result;
+        }
+
+        // Try to find JSON objects in the string
+        $objects = [];
+        $depth = 0;
+        $start = null;
+        $inString = false;
+        $escaped = false;
+
+        for ($i = 0; $i < strlen($str); $i++) {
+            $char = $str[$i];
+
+            if ($escaped) {
+                $escaped = false;
+                continue;
+            }
+
+            if ($char === '\\') {
+                $escaped = true;
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = !$inString;
+                continue;
+            }
+
+            if ($inString) continue;
+
+            if ($char === '{') {
+                if ($depth === 0) $start = $i;
+                $depth++;
+            } elseif ($char === '}') {
+                $depth--;
+                if ($depth === 0 && $start !== null) {
+                    $candidate = substr($str, $start, $i - $start + 1);
+                    $parsed = json_decode($candidate, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                        $objects[] = $parsed;
+                    }
+                    $start = null;
+                }
+            }
+        }
+
+        if (!empty($objects)) {
+            return count($objects) === 1 ? $objects : $objects;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Try parsing JSON, and if it fails, try fixing common issues and re-parsing.
+ */
+private function tryParseWithTruncation(string $str): ?array
+{
+    // Direct attempt
+    $decoded = json_decode($str, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
+
+    // Apply sanitize and try
+    $sanitized = $this->sanitizeSchema($str);
+    $decoded = json_decode($sanitized, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
+
+    // Apply aggressive inch fix
+    $fixed = $this->fixInchMarksAggressive($str);
+    $decoded = json_decode($fixed, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) return $decoded;
+
+    return null;
+}
+
+/**
+ * Fixes fields like "description": "[\"<p>...\"]" → "description": ["<p>..."]
+ * Uses proper bracket depth tracking to find the real end of the stringified array.
+ */
+private function fixStringifiedArrayFields(string $str, array $fields): string
 {
     foreach ($fields as $field) {
-        $needle = '"' . $field . '": "';
-        $offset = 0;
+        // Match both "field": "[ and "field":"[
+        $patterns = [
+            '"' . $field . '": "',
+            '"' . $field . '":"',
+        ];
 
-        while (($pos = strpos($str, $needle, $offset)) !== false) {
-            $valueStart = $pos + strlen($needle);
+        foreach ($patterns as $needle) {
+            $offset = 0;
 
-            // Check if value starts with [ (stringified array)
-            if (substr($str, $valueStart, 1) !== '[') {
-                $offset = $pos + 1;
-                continue;
+            while (($pos = strpos($str, $needle, $offset)) !== false) {
+                $valueStart = $pos + strlen($needle);
+
+                // Check if value starts with [ (stringified array indicator)
+                if (!isset($str[$valueStart]) || $str[$valueStart] !== '[') {
+                    $offset = $pos + 1;
+                    continue;
+                }
+
+                // Find the real closing ]" by tracking bracket depth
+                // We need to handle escaped quotes inside the stringified array
+                $depth = 0;
+                $i = $valueStart;
+                $len = strlen($str);
+                $foundEnd = false;
+                $endPos = -1;
+
+                while ($i < $len) {
+                    $ch = $str[$i];
+
+                    if ($ch === '\\' && $i + 1 < $len) {
+                        $i += 2; // skip escaped character
+                        continue;
+                    }
+
+                    if ($ch === '[') {
+                        $depth++;
+                    } elseif ($ch === ']') {
+                        $depth--;
+                        if ($depth === 0) {
+                            // This ] should be followed by " (closing the outer string)
+                            if ($i + 1 < $len && $str[$i + 1] === '"') {
+                                $endPos = $i;
+                                $foundEnd = true;
+                                break;
+                            }
+                        }
+                    }
+                    $i++;
+                }
+
+                if (!$foundEnd) {
+                    $offset = $pos + 1;
+                    continue;
+                }
+
+                // Extract the array content (including [ and ])
+                $arrayContent = substr($str, $valueStart, ($endPos - $valueStart) + 1);
+
+                // Unescape the internal escaped quotes: \" → "
+                $arrayContent = str_replace('\\"', '"', $arrayContent);
+                $arrayContent = str_replace('\\\\/', '/', $arrayContent);
+
+                // Try to parse it as JSON array
+                $testParse = json_decode($arrayContent, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    // If it fails, just strip HTML tags and make a clean string
+                    $cleanText = strip_tags(implode(' ', json_decode($arrayContent, true) ?? [$arrayContent]));
+                    $cleanText = trim(preg_replace('/\s+/', ' ', $cleanText));
+                    $cleanText = str_replace(['\\', '"'], ['\\\\', '\\"'], $cleanText);
+                    $replacement = '"' . $field . '": "' . $cleanText . '"';
+                } else {
+                    // It parsed fine as array - strip HTML from each element and join as clean string
+                    if (is_array($testParse)) {
+                        $cleanText = trim(strip_tags(implode(' ', array_filter($testParse))));
+                        $cleanText = preg_replace('/\s+/', ' ', $cleanText);
+                        $cleanText = str_replace(['\\', '"'], ['\\\\', '\\"'], $cleanText);
+                        $replacement = '"' . $field . '": "' . $cleanText . '"';
+                    } else {
+                        $offset = $pos + 1;
+                        continue;
+                    }
+                }
+
+                // Replace in original string
+                $before = substr($str, 0, $pos);
+                $after  = substr($str, $endPos + 2); // skip ]"
+
+                $str = $before . $replacement . $after;
+                $offset = strlen($before) + strlen($replacement);
             }
-
-            // Find the closing ]" — the end of the stringified array
-            $closePos = strpos($str, ']"', $valueStart);
-            if ($closePos === false) {
-                $offset = $pos + 1;
-                continue;
-            }
-
-            // Extract the raw stringified array content including [ and ]
-            $arrayContent = substr($str, $valueStart, ($closePos - $valueStart) + 1);
-
-            // Replace the stringified version with the raw array
-            $before = substr($str, 0, $pos);
-            $after  = substr($str, $closePos + 2); // skip ]"
-
-            $str = $before . '"' . $field . '": ' . $arrayContent . $after;
-
-            // Move offset past the fix we just made
-            $offset = strlen($before) + strlen('"' . $field . '": ') + strlen($arrayContent);
         }
     }
 
