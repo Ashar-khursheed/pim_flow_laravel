@@ -30,7 +30,7 @@ class HorecaIqController extends BaseController
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		$recordsQuery = Product::query()->where('status', 'published');
+		$recordsQuery = Product::where('status', 'published');
 
 		/* Validate required pagination params */
 		if (!$request->filled('page') || !$request->filled('length')) {
@@ -143,7 +143,9 @@ class HorecaIqController extends BaseController
 			'seoProductUrl:id,relational_id,relational_type,url',
 			'productAttributes:id,product_id,attribute_id,attribute_value,measurement_unit_id',
 			'productAttributes.attributeDetails:id,name',
-			'productAttributes.measurementUnit:id,name,symbol',
+			'productAttributes.measurementUnit:id,measurement_type_id,name,symbol',
+			'productAttributes.measurementUnit.type:id,name',
+			'productAccessories:id,product_id,name'
 		])
 		->where('status', 'published')
 		->select('id', 'name', 'sku', 'images', 'brand_id', 'description')
@@ -175,14 +177,14 @@ class HorecaIqController extends BaseController
 
 		unset($product->name, $product->images, $product->firstSupplier, $product->brand, $product->brand_id, $product->seoProductUrl);
 
-		$product->product_attributes = $product->productAttributes->map(function ($attribute) {
-	$unit = $attribute->measurementUnit->symbol ?? '';
-	return [
-		$attribute->attributeDetails->name => $attribute->attribute_value . ($unit ? ' ' . $unit : ''),
-	];
-})->values();
+		$product->product_attributes = $product->productAttributes->mapWithKeys(function ($attribute) {
+			$unit = $attribute->measurementUnit->symbol ?? '';
+			return [
+				$attribute->attributeDetails->name => $attribute->attribute_value . ($unit ? ' ' . $unit : ''),
+			];
+		});
 
-unset($product->productAttributes,$product->categories);
+		unset($product->productAttributes,$product->categories);
 
 		return response()->json([
 			'success' => true,
