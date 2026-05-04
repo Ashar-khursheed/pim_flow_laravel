@@ -260,7 +260,7 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
 	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
-	 *             @OA\Property(property="priority", type="integer", nullable=true, example="1"),
+	 *             @OA\Property(property="priority", type="integer", nullable=true, example=1),
 
 	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=15)
 	 *         )
@@ -471,7 +471,7 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
 	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
-	 *             @OA\Property(property="priority", type="integer", nullable=true, example="1"),
+	 *             @OA\Property(property="priority", type="integer", nullable=true, example=1),
 	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=20)
 	 *         )
 	 *     ),
@@ -1340,9 +1340,8 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="priority", type="integer", example=2)
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Priority updated successfully"),
-	 *     @OA\Response(response=422, description="Validation error"),
-	 *     @OA\Response(response=404, description="Supplier not found")
+	 *     @OA\Response(response=200, description="Priority updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function updatePriority(Request $request, $id)

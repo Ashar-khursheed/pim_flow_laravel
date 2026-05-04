@@ -41177,6 +41177,7 @@
                                 "sale_price",
                                 "price",
                                 "margin",
+                                "priority",
                                 "created_at",
                                 "updated_at"
                             ]
@@ -41336,6 +41337,11 @@
                                     "warranty_information": {
                                         "type": "string",
                                         "example": "6 months",
+                                        "nullable": true
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "example": 1,
                                         "nullable": true
                                     },
                                     "restocking_fees": {
@@ -41528,6 +41534,11 @@
                                     "warranty_information": {
                                         "type": "string",
                                         "example": "6 months",
+                                        "nullable": true
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "example": 1,
                                         "nullable": true
                                     },
                                     "restocking_fees": {
@@ -41948,6 +41959,57 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/{id}/priority": {
+            "put": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Update single supplier priority via drag drop",
+                "operationId": "4ecedd90f9ead6a8c2bd8fce8d3367da",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "priority"
+                                ],
+                                "properties": {
+                                    "priority": {
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Priority updated successfully",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
