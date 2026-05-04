@@ -28,7 +28,7 @@ class ProductSupplierController extends BaseController
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="product_id", in="query", description="Filter by product_id.", example="1",  @OA\Schema(type="integer")),
-	 *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string", enum={"id", "product_name", "vendor_name", "vendor_sku", "list_price", "multiple", "cost_per_item", "surcharge", "additional_cost", "total_cost_per_item", "sale_price", "price", "margin", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string", enum={"id", "product_name", "vendor_name", "vendor_sku", "list_price", "multiple", "cost_per_item", "surcharge", "additional_cost", "total_cost_per_item", "sale_price", "price", "margin", "priority", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Suppliers retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -94,7 +94,7 @@ class ProductSupplierController extends BaseController
 	// 		$recordsQuery->orderBy('vendors.country', $sortDir);
 	// 	}
 	// 	elseif ($sortBy === 'product_sku') {
-    //     $recordsQuery->orderBy('ec_products.sku', $sortDir);
+	//     $recordsQuery->orderBy('ec_products.sku', $sortDir);
 	// 	}
 	// 	else {
 	// 			$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
@@ -132,20 +132,20 @@ class ProductSupplierController extends BaseController
 			[
 				'list_price', 'multiple', 'cost_per_item', 'surcharge',
 				'additional_cost', 'total_cost_per_item', 'sale_price',
-				'price', 'margin', 'created_at', 'updated_at'
+				'price', 'margin', 'priority', 'created_at', 'updated_at'
 			]
 		);
 
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns)
-			? $request->input('sort_by')
-			: 'id';
+		? $request->input('sort_by')
+		: 'id';
 
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = ProductSupplier::query()
-			->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
-			->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-			->leftJoin('countries', 'vendors.country_id', '=', 'countries.id')
+		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+		->leftJoin('countries', 'vendors.country_id', '=', 'countries.id')
 			->leftJoin('users', 'product_suppliers.updated_by', '=', 'users.id') // 👈 users join
 			->select(
 				'product_suppliers.*',
@@ -159,40 +159,40 @@ class ProductSupplierController extends BaseController
 				\DB::raw("CONCAT(users.first_name, ' ', users.last_name) as updated_by_name")
 			);
 
-		if ($request->filled('product_id')) {
-			$recordsQuery->where('product_suppliers.product_id', $request->input('product_id'));
-		}
+			if ($request->filled('product_id')) {
+				$recordsQuery->where('product_suppliers.product_id', $request->input('product_id'));
+			}
 
-		/* Filter: product status (published / draft) */
-		if ($request->filled('status')) {
-			$recordsQuery->where('ec_products.status', $request->input('status'));
-		}
+			/* Filter: product status (published / draft) */
+			if ($request->filled('status')) {
+				$recordsQuery->where('ec_products.status', $request->input('status'));
+			}
 
-		/* Filter: country */
-		if ($request->filled('country_id')) {
-			$recordsQuery->where('vendors.country_id', $request->input('country_id'));
-		}
+			/* Filter: country */
+			if ($request->filled('country_id')) {
+				$recordsQuery->where('vendors.country_id', $request->input('country_id'));
+			}
 
-		/* Global Search */
-		if ($request->filled('global')) {
-			$search = $request->input('global');
+			/* Global Search */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
 
-			$recordsQuery->where(function ($q) use ($search) {
-				$q->orWhere('product_suppliers.id', 'like', "%$search%")
-				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
-				->orWhere('ec_products.sku', 'like', "%$search%")
-				->orWhere('ec_products.name', 'like', "%$search%")
-				->orWhere('vendors.name', 'like', "%$search%")
+				$recordsQuery->where(function ($q) use ($search) {
+					$q->orWhere('product_suppliers.id', 'like', "%$search%")
+					->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
+					->orWhere('ec_products.sku', 'like', "%$search%")
+					->orWhere('ec_products.name', 'like', "%$search%")
+					->orWhere('vendors.name', 'like', "%$search%")
 				->orWhere('countries.name', 'like', "%$search%"); // 👈 fixed: was vendors.country
 			});
-		}
+			}
 
-		/* Sorting */
-		if ($sortBy === 'product_name') {
-			$recordsQuery->orderBy('ec_products.name', $sortDir);
-		} elseif ($sortBy === 'vendor_name') {
-			$recordsQuery->orderBy('vendors.name', $sortDir);
-		} elseif ($sortBy === 'vendor_country') {
+			/* Sorting */
+			if ($sortBy === 'product_name') {
+				$recordsQuery->orderBy('ec_products.name', $sortDir);
+			} elseif ($sortBy === 'vendor_name') {
+				$recordsQuery->orderBy('vendors.name', $sortDir);
+			} elseif ($sortBy === 'vendor_country') {
 			$recordsQuery->orderBy('countries.name', $sortDir); // 👈 fixed: was vendors.country
 		} elseif ($sortBy === 'product_sku') {
 			$recordsQuery->orderBy('ec_products.sku', $sortDir);
@@ -212,9 +212,9 @@ class ProductSupplierController extends BaseController
 		}
 
 		$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get();
 
 		return response()->json([
 			'success'       => true,
@@ -260,6 +260,7 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
 	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
+	 *             @OA\Property(property="priority", type="integer", nullable=true, example="1"),
 
 	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=15)
 	 *         )
@@ -296,6 +297,7 @@ class ProductSupplierController extends BaseController
 			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
 			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'priority' => 'nullable|integer',
 
 			'restocking_fees' => 'nullable|numeric',
 		]);
@@ -378,6 +380,27 @@ class ProductSupplierController extends BaseController
 		$data['inventory_updated_at'] = now();
 		$data['created_by'] = auth()->id();
 
+		/* Priority logic */
+		$existingCount = ProductSupplier::where('product_id', $data['product_id'])->count();
+
+		if (empty($data['priority'])) {
+			/* Priority nahi di — last pe set karo */
+			$data['priority'] = $existingCount + 1;
+		} else {
+			/* Priority di hai — range check karo (1 to existingCount+1) */
+			if ($data['priority'] < 1 || $data['priority'] > $existingCount + 1) {
+				return response()->json([
+					'success' => false,
+					'message' => "Priority must be between 1 and " . ($existingCount + 1) . ".",
+				], 422);
+			}
+
+			/* Given priority se neeche saare records ki priority +1 karo */
+			ProductSupplier::where('product_id', $data['product_id'])
+			->where('priority', '>=', $data['priority'])
+			->increment('priority');
+		}
+
 		$record = ProductSupplier::create($data);
 
 		return response()->json([
@@ -448,6 +471,7 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
 	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
+	 *             @OA\Property(property="priority", type="integer", nullable=true, example="1"),
 	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=20)
 	 *         )
 	 *     ),
@@ -564,120 +588,121 @@ class ProductSupplierController extends BaseController
 
 	public function update(Request $request, $id)
 	{
-	    $supplier = ProductSupplier::find($id);
+		$supplier = ProductSupplier::find($id);
 
-	    if (!$supplier) {
-	        return response()->json([
-	            'success' => false,
-	            'message' => 'Supplier not found.'
-	        ], 404);
-	    }
+		if (!$supplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found.'
+			], 404);
+		}
 
-	    // -----------------------------
-	    // Validation
-	    // -----------------------------
-	    $data = $request->validate([
-	        'product_id'      => 'required|integer|exists:ec_products,id',
-	        'vendor_id'       => 'required|integer|exists:vendors,id',
-	        'vendor_sku'      => 'required|string',
+		// -----------------------------
+		// Validation
+		// -----------------------------
+		$data = $request->validate([
+			'product_id'      => 'required|integer|exists:ec_products,id',
+			'vendor_id'       => 'required|integer|exists:vendors,id',
+			'vendor_sku'      => 'required|string',
 
-	        'list_price'      => 'nullable|numeric|required_without:cost_per_item',
-	        'multiple'        => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
-	        'cost_per_item'   => 'nullable|numeric|required_without_all:list_price,multiple',
+			'list_price'      => 'nullable|numeric|required_without:cost_per_item',
+			'multiple'        => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
+			'cost_per_item'   => 'nullable|numeric|required_without_all:list_price,multiple',
 
-	        'surcharge'       => 'nullable|numeric',
-	        'additional_cost' => 'nullable|numeric',
+			'surcharge'       => 'nullable|numeric',
+			'additional_cost' => 'nullable|numeric',
 
-	        'map'             => 'nullable|numeric',
-	        'sale_price'      => 'nullable|numeric',
-	        'price'           => 'required|numeric',
+			'map'             => 'nullable|numeric',
+			'sale_price'      => 'nullable|numeric',
+			'price'           => 'required|numeric',
 
-	        'inventory'       => 'nullable|integer',
+			'inventory'       => 'nullable|integer',
 
-	        'in_stock'        => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
-	        'min_quantity'    => 'required|integer',
-	        'is_fixed'        => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
-	        'delivery_days'   => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
-	        'return_policy'   => ['required', Rule::in(app_constants('RETURN_POLICY'))],
-	        'free_shipping'   => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-	        'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
-	        'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'in_stock'        => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'min_quantity'    => 'required|integer',
+			'is_fixed'        => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
+			'delivery_days'   => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'return_policy'   => ['required', Rule::in(app_constants('RETURN_POLICY'))],
+			'free_shipping'   => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
+			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'priority' => 'nullable|integer',
 
-	        'restocking_fees' => 'nullable|numeric',
-	    ]);
+			'restocking_fees' => 'nullable|numeric',
+		]);
 
-	    // -----------------------------
-	    // Normalize numeric values
-	    // -----------------------------
-	    $data['multiple']    = isset($data['multiple']) ? (float)$data['multiple'] : null;
-	    $data['list_price']  = isset($data['list_price']) ? (float)$data['list_price'] : null;
-	    $data['cost_per_item'] = isset($data['cost_per_item']) ? (float)$data['cost_per_item'] : 0;
+		// -----------------------------
+		// Normalize numeric values
+		// -----------------------------
+		$data['multiple']    = isset($data['multiple']) ? (float)$data['multiple'] : null;
+		$data['list_price']  = isset($data['list_price']) ? (float)$data['list_price'] : null;
+		$data['cost_per_item'] = isset($data['cost_per_item']) ? (float)$data['cost_per_item'] : 0;
 
-	    // Treat 0 as null for multiple (means not applicable)
-	    if ($data['multiple'] === 0.0) {
-	        $data['multiple'] = null;
-	    }
+		// Treat 0 as null for multiple (means not applicable)
+		if ($data['multiple'] === 0.0) {
+			$data['multiple'] = null;
+		}
 
-	    // -----------------------------
-	    // Business rules
-	    // -----------------------------
-	    $rowErrors = [];
+		// -----------------------------
+		// Business rules
+		// -----------------------------
+		$rowErrors = [];
 
-	    if ($data['map'] !== null && $data['sale_price'] !== null && $data['map'] > $data['sale_price']) {
-	        $rowErrors[] = 'Sale Price cannot be less than MAP.';
-	    }
+		if ($data['map'] !== null && $data['sale_price'] !== null && $data['map'] > $data['sale_price']) {
+			$rowErrors[] = 'Sale Price cannot be less than MAP.';
+		}
 
-	    if ($data['sale_price'] !== null && $data['price'] < $data['sale_price']) {
-	        $rowErrors[] = 'Price cannot be less than sale price.';
-	    }
+		if ($data['sale_price'] !== null && $data['price'] < $data['sale_price']) {
+			$rowErrors[] = 'Price cannot be less than sale price.';
+		}
 
-	    if ($data['map'] !== null && $data['price'] < $data['map']) {
-	        $rowErrors[] = 'Price cannot be less than MAP.';
-	    }
+		if ($data['map'] !== null && $data['price'] < $data['map']) {
+			$rowErrors[] = 'Price cannot be less than MAP.';
+		}
 
-	    if (!empty($rowErrors)) {
-	        return response()->json([
-	            'success' => false,
-	            'errors'  => $rowErrors
-	        ], 422);
-	    }
+		if (!empty($rowErrors)) {
+			return response()->json([
+				'success' => false,
+				'errors'  => $rowErrors
+			], 422);
+		}
 
-	    // -----------------------------
-	    // Compute cost and margin
-	    // -----------------------------
-	    $data['cost_per_item'] = ($data['list_price'] !== null && $data['multiple'] !== null)
-	        ? $data['list_price'] * $data['multiple']
-	        : $data['cost_per_item'];
+		// -----------------------------
+		// Compute cost and margin
+		// -----------------------------
+		$data['cost_per_item'] = ($data['list_price'] !== null && $data['multiple'] !== null)
+		? $data['list_price'] * $data['multiple']
+		: $data['cost_per_item'];
 
-	    $data['surcharge'] = isset($data['surcharge']) ? $data['cost_per_item'] * ($data['surcharge'] / 100) : 0;
-	    $data['additional_cost'] = isset($data['additional_cost']) ? $data['cost_per_item'] * ($data['additional_cost'] / 100) : 0;
-	    $data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
+		$data['surcharge'] = isset($data['surcharge']) ? $data['cost_per_item'] * ($data['surcharge'] / 100) : 0;
+		$data['additional_cost'] = isset($data['additional_cost']) ? $data['cost_per_item'] * ($data['additional_cost'] / 100) : 0;
+		$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
 
-	    $data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
-	    $data['price'] = (float)$data['price'];
+		$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
+		$data['price'] = (float)$data['price'];
 
-	    // Calculate margin
-	    if ($data['sale_price'] !== null && $data['sale_price'] > 0) {
-	        $data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
-	    } elseif ($data['price'] > 0) {
-	        $data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
-	    } else {
-	        $data['margin'] = null;
-	    }
+		// Calculate margin
+		if ($data['sale_price'] !== null && $data['sale_price'] > 0) {
+			$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
+		} elseif ($data['price'] > 0) {
+			$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
+		} else {
+			$data['margin'] = null;
+		}
 
-	    // -----------------------------
-	    // Normalize boolean-like values
-	    // -----------------------------
-	    $data['in_stock'] = ($data['inventory'] > 0) ? 1 : (strtolower($data['in_stock'] ?? '') === 'yes' ? 1 : 0);
-	    $data['is_fixed'] = strtolower($data['is_fixed'] ?? '') === 'yes' ? 1 : 0;
-	    $data['free_shipping'] = strtolower($data['free_shipping'] ?? '') === 'yes' ? 1 : 0;
+		// -----------------------------
+		// Normalize boolean-like values
+		// -----------------------------
+		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (strtolower($data['in_stock'] ?? '') === 'yes' ? 1 : 0);
+		$data['is_fixed'] = strtolower($data['is_fixed'] ?? '') === 'yes' ? 1 : 0;
+		$data['free_shipping'] = strtolower($data['free_shipping'] ?? '') === 'yes' ? 1 : 0;
 
-	    // FIXED: Provide default value for shipping_charge
-	    $data['shipping_charge'] = $data['free_shipping'] ? 0 : ($data['shipping_charge'] ?? 0);
+		// FIXED: Provide default value for shipping_charge
+		$data['shipping_charge'] = $data['free_shipping'] ? 0 : ($data['shipping_charge'] ?? 0);
 
-	    // -----------------------------
-	    // Save
-	    // -----------------------------
+		// -----------------------------
+		// Save
+		// -----------------------------
 		$data['updated_by'] = auth()->id();
 
 		/* Track inventory change — update audit fields only if inventory changed */
@@ -688,25 +713,54 @@ class ProductSupplierController extends BaseController
 		}
 
 		/* Only touch updated_at when non-inventory fields changed.
-		   inventory + in_stock (derived from inventory) don't count. */
+		inventory + in_stock (derived from inventory) don't count. */
 		$inventoryOnlyKeys = ['inventory', 'in_stock', 'inventory_updated_by', 'inventory_updated_at', 'updated_by'];
 		$hasNonInventoryChanges = collect($data)
-			->except($inventoryOnlyKeys)
-			->filter(fn($value, $key) => $supplier->getAttribute($key) != $value)
-			->isNotEmpty();
+		->except($inventoryOnlyKeys)
+		->filter(fn($value, $key) => $supplier->getAttribute($key) != $value)
+		->isNotEmpty();
 
 		$supplier->timestamps = false;
 		if ($hasNonInventoryChanges) {
 			$data['updated_at'] = now();
 		}
+
+		/* Priority logic */
+		if (!empty($data['priority']) && $data['priority'] != $supplier->priority) {
+			$existingCount = ProductSupplier::where('product_id', $data['product_id'])->count();
+
+			/* Range check — 1 to existingCount */
+			if ($data['priority'] < 1 || $data['priority'] > $existingCount) {
+				return response()->json([
+					'success' => false,
+					'message' => "Priority must be between 1 and {$existingCount}.",
+				], 422);
+			}
+
+			$oldPriority = $supplier->priority;
+			$newPriority = $data['priority'];
+
+			if ($newPriority < $oldPriority) {
+				/* Moving up — records between new and old-1 ko +1 karo */
+				ProductSupplier::where('product_id', $data['product_id'])
+					->whereBetween('priority', [$newPriority, $oldPriority - 1])
+					->increment('priority');
+			} else {
+				/* Moving down — records between old+1 and new ko -1 karo */
+				ProductSupplier::where('product_id', $data['product_id'])
+					->whereBetween('priority', [$oldPriority + 1, $newPriority])
+					->decrement('priority');
+			}
+		}
+
 		$supplier->update($data);
 		$supplier->timestamps = true;
 
-	    return response()->json([
-	        'success' => true,
-	        'message' => 'Product supplier updated successfully.',
-	        'data'    => $supplier
-	    ], 200);
+		return response()->json([
+			'success' => true,
+			'message' => 'Product supplier updated successfully.',
+			'data'    => $supplier
+		], 200);
 	}
 
 	/**
@@ -1087,90 +1141,90 @@ class ProductSupplierController extends BaseController
 	}
 
 	 /**
-     * @OA\Put(
-     *     path="/api/product-supplier/{id}/update-price",
-     *     summary="Update price, sale price, and total cost per item for a product supplier",
-     *     tags={"Product Supplier"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="ID of the product supplier",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="price", type="number", format="float", example=150),
-     *             @OA\Property(property="sale_price", type="number", format="float", example=120),
-     *             @OA\Property(property="total_cost_per_item", type="number", format="float", example=100)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successfully updated",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Product supplier updated successfully."),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Supplier not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Supplier not found.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation errors",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
-     *         )
-     *     ),
+	 * @OA\Put(
+	 *     path="/api/product-supplier/{id}/update-price",
+	 *     summary="Update price, sale price, and total cost per item for a product supplier",
+	 *     tags={"Product Supplier"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="ID of the product supplier",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="price", type="number", format="float", example=150),
+	 *             @OA\Property(property="sale_price", type="number", format="float", example=120),
+	 *             @OA\Property(property="total_cost_per_item", type="number", format="float", example=100)
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successfully updated",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Product supplier updated successfully."),
+	 *             @OA\Property(property="data", type="object")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Supplier not found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Supplier not found.")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation errors",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+	 *         )
+	 *     ),
 	 *		 security={{"bearerAuth":{}}}
-     * )
-     */
-    public function updatePrice(Request $request, $id)
-    {
-        $supplier = ProductSupplier::find($id);
+	 * )
+	 */
+	 public function updatePrice(Request $request, $id)
+	 {
+	 	$supplier = ProductSupplier::find($id);
 
-        if (!$supplier) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Supplier not found.'
-            ], 404);
-        }
+	 	if (!$supplier) {
+	 		return response()->json([
+	 			'success' => false,
+	 			'message' => 'Supplier not found.'
+	 		], 404);
+	 	}
 
-        $data = $request->validate([
-            'price' => 'required|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
-            'total_cost_per_item' => 'required|numeric|min:0',
-        ]);
+	 	$data = $request->validate([
+	 		'price' => 'required|numeric|min:0',
+	 		'sale_price' => 'nullable|numeric|min:0',
+	 		'total_cost_per_item' => 'required|numeric|min:0',
+	 	]);
 
-        // Business rules
-        if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
-            return response()->json([
-                'success' => false,
-                'errors' => ['Price cannot be less than sale price.']
-            ], 422);
-        }
+		// Business rules
+	 	if (!empty($data['sale_price']) && $data['price'] < $data['sale_price']) {
+	 		return response()->json([
+	 			'success' => false,
+	 			'errors' => ['Price cannot be less than sale price.']
+	 		], 422);
+	 	}
 
-        $supplier->update([
-            'price' => $data['price'],
-            'sale_price' => $data['sale_price'] ?? null,
-            'total_cost_per_item' => $data['total_cost_per_item']
-        ]);
+	 	$supplier->update([
+	 		'price' => $data['price'],
+	 		'sale_price' => $data['sale_price'] ?? null,
+	 		'total_cost_per_item' => $data['total_cost_per_item']
+	 	]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Product supplier updated successfully.',
-            'data' => $supplier
-        ], 200);
-    }
+	 	return response()->json([
+	 		'success' => true,
+	 		'message' => 'Product supplier updated successfully.',
+	 		'data' => $supplier
+	 	], 200);
+	 }
 
 	/**
 	 * @OA\Put(
@@ -1268,6 +1322,77 @@ class ProductSupplierController extends BaseController
 		], 200);
 	}
 
+	/**
+	 * @OA\Put(
+	 *     path="/api/product-suppliers/{id}/priority",
+	 *     summary="Update single supplier priority via drag drop",
+	 *     tags={"Product Suppliers"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"priority"},
+	 *             @OA\Property(property="priority", type="integer", example=2)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Priority updated successfully"),
+	 *     @OA\Response(response=422, description="Validation error"),
+	 *     @OA\Response(response=404, description="Supplier not found")
+	 * )
+	 */
+	public function updatePriority(Request $request, $id)
+	{
+		$supplier = ProductSupplier::find($id);
 
+		if (!$supplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found.',
+			], 404);
+		}
 
+		$existingCount = ProductSupplier::where('product_id', $supplier->product_id)->count();
+
+		$data = $request->validate([
+			'priority' => "required|integer|min:1|max:{$existingCount}",
+		]);
+
+		$oldPriority = $supplier->priority;
+		$newPriority = $data['priority'];
+
+		/* Same priority — no change needed */
+		if ($oldPriority === $newPriority) {
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_update'),
+			]);
+		}
+
+		if ($newPriority < $oldPriority) {
+			/* Moving up — records between new and old-1 ko +1 karo */
+			ProductSupplier::where('product_id', $supplier->product_id)
+			->whereBetween('priority', [$newPriority, $oldPriority - 1])
+			->increment('priority');
+		} else {
+			/* Moving down — records between old+1 and new ko -1 karo */
+			ProductSupplier::where('product_id', $supplier->product_id)
+			->whereBetween('priority', [$oldPriority + 1, $newPriority])
+			->decrement('priority');
+		}
+
+		$supplier->priority = $newPriority;
+		$supplier->timestamps = false;
+		$supplier->save();
+		$supplier->timestamps = true;
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_update'),
+		]);
+	}
 }

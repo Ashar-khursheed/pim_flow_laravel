@@ -31,6 +31,7 @@ class ProductSupplier extends Model
 		'margin',
 		'restocking_fees',
 		'warranty_information',
+		'priority'
 		'created_by',
 		'updated_by',
 	];

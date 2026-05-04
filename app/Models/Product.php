@@ -266,6 +266,14 @@ class Product extends Model implements TranslatableContract
 	{
 		return $this->hasMany(ProductSupplier::class, 'product_id');
 	}
+
+	/* Best priority supplier — lowest priority number (1 is best) */
+	public function bestSupplier()
+	{
+		return $this->hasOne(ProductSupplier::class, 'product_id')
+		->orderBy('priority', 'asc');
+	}
+
 	public function productVariants()
 	{
 		return $this->hasMany(ProductVariant::class, 'parent_id');

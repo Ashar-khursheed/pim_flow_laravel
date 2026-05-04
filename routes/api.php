@@ -403,6 +403,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/customers/filter-by-date', [CustomerController::class, 'filterByDate']);
 	Route::apiResource('customer-address', CustomerAddressController::class);
 
+	Route::put('/product-suppliers/{id}/priority', [ProductSupplierController::class, 'updatePriority']);
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
