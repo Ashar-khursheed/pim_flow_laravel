@@ -138,7 +138,7 @@ class ProductSupplierController extends BaseController
 
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns)
 		? $request->input('sort_by')
-		: 'id';
+		: 'priority';
 
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
