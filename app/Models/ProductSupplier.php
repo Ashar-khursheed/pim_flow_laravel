@@ -93,4 +93,15 @@ class ProductSupplier extends Model
 	{
 		return $query->orderByRaw('CASE WHEN sale_price > 0 THEN sale_price ELSE price END ASC');
 	}
+
+	/**
+	 * Prepare a date for array / JSON serialization.
+	 *
+	 * @param  \DateTimeInterface  $date
+	 * @return string
+	 */
+	protected function serializeDate(\DateTimeInterface $date)
+	{
+		return $date->format('Y-m-d H:i:s');
+	}
 }

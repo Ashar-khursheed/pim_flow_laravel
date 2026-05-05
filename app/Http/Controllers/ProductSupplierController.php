@@ -321,7 +321,14 @@ class ProductSupplierController extends BaseController
 	 */
 	public function show($id)
 	{
-		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name', 'latestPriceTracking:id,old_value,new_value,created_by', 'latestPriceTracking.creator:id,first_name,last_name', 'latestInventoryTracking:id,old_value,new_value,created_by', 'latestInventoryTracking.creator:id,first_name,last_name'])->find($id);
+		$productSupplier = ProductSupplier::with([
+			'product:id,name',
+			'vendor:id,name',
+			'latestPriceTracking',
+			'latestPriceTracking.creator:id,first_name,last_name',
+			'latestInventoryTracking',
+			'latestInventoryTracking.creator:id,first_name,last_name'
+		])->find($id);
 
 		if (!$productSupplier) {
 			return response()->json([
@@ -329,6 +336,24 @@ class ProductSupplierController extends BaseController
 				'message' => 'Supplier not found.'
 			], 404);
 		}
+
+		$latestInventory = $productSupplier->latestInventoryTracking;
+		$productSupplier->latest_inventory_tracking = $latestInventory ? [
+			'old_value' => $latestInventory->old_value,
+			'new_value' => $latestInventory->new_value,
+			'updated_by' => $latestInventory->creator ? $latestInventory->creator->name : null,
+			'updated_at' => $latestInventory->created_at->format('Y-m-d H:i:s'),
+		] : null;
+
+		$latestPrice = $productSupplier->latestPriceTracking;
+		$productSupplier->latest_price_tracking = $latestPrice ? [
+			'old_value' => $latestPrice->old_value,
+			'new_value' => $latestPrice->new_value,
+			'updated_by' => $latestInventory->creator ? $latestInventory->creator->name : null,
+			'updated_at' => $latestInventory->created_at->format('Y-m-d H:i:s'),
+		] : null;
+
+		unset($productSupplier->latestInventoryTracking, $productSupplier->latestPriceTracking);
 
 		return response()->json([
 			'success' => true,
