@@ -65,6 +65,7 @@ class ProductSupplierController extends BaseController
 		->join('ec_products', 'ec_products.id', '=', 'product_suppliers.product_id')
 		->join('vendors', 'vendors.id', '=', 'product_suppliers.vendor_id')
 		->leftJoin('countries', 'countries.id', '=', 'vendors.country_id')
+		->leftJoin('users as creator', 'creator.id', '=', 'product_suppliers.created_by')
 		->leftJoin('users as updator', 'updator.id', '=', 'product_suppliers.updated_by')
 		->leftJoinSub($latestInventoryTracking, 'inv_tracking', function ($join) {
 			$join->on('inv_tracking.product_price_id', '=', 'product_suppliers.id');
@@ -82,6 +83,8 @@ class ProductSupplierController extends BaseController
 			'vendors.name as vendor_name',
 			'vendors.country_id as vendor_country_id',
 			'countries.name as vendor_country',
+			'creator.first_name as creator_first_name',
+			'creator.last_name as creator_last_name',
 			'updator.first_name as updator_first_name',
 			'updator.last_name as updator_last_name',
 			'inv_tracking.inventory_updated_time',
@@ -147,11 +150,12 @@ class ProductSupplierController extends BaseController
 
 		/* Build name fields from joined columns — UCFIRST not available in MySQL */
 		$records->transform(function ($record) {
+			$creatorName = $record->creator_first_name ? ucfirst($record->creator_first_name) . ' ' . ucfirst($record->creator_last_name) : null;
 			$record->updated_by_name = $record->updator_first_name ? ucfirst($record->updator_first_name) . ' ' . ucfirst($record->updator_last_name) : null;
-			$record->inventory_updator_name = $record->inv_updator_first_name ? ucfirst($record->inv_updator_first_name) . ' ' . ucfirst($record->inv_updator_last_name) : null;
-			$record->price_updator_name = $record->prc_updator_first_name ? ucfirst($record->prc_updator_first_name) . ' ' . ucfirst($record->prc_updator_last_name) : null;
-			$record->price_updating_time = $record->price_updated_time ?? null;
-			$record->inventory_updating_time = $record->inventory_updated_time ?? null;
+			$record->inventory_updator_name = $record->inv_updator_first_name ? ucfirst($record->inv_updator_first_name) . ' ' . ucfirst($record->inv_updator_last_name) : $creatorName;
+			$record->price_updator_name = $record->prc_updator_first_name ? ucfirst($record->prc_updator_first_name) . ' ' . ucfirst($record->prc_updator_last_name) : $creatorName;
+			$record->price_updating_time = $record->price_updated_time ?? $record->created_at;
+			$record->inventory_updating_time = $record->inventory_updated_time ?? $record->created_at;
 
 			unset(
 				$record->updator_first_name,

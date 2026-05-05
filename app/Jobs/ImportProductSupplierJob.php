@@ -298,11 +298,6 @@ class ImportProductSupplierJob implements ShouldQueue
 					$supplier->updated_at = now();
 				}
 
-				/* Capture old values before update for tracking */
-				$oldPrice = $existingSupplier->price ?? null;
-				$oldSalePrice = $existingSupplier->sale_price ?? null;
-				$oldInventory = $existingSupplier->inventory ?? null;
-
 				/* Set values */
 				$supplier->product_id = $productID;
 				$supplier->vendor_id = $vendorID;
@@ -330,40 +325,47 @@ class ImportProductSupplierJob implements ShouldQueue
 				$supplier->save();
 
 				/* Track changes for price, sale_price and inventory — only if value changed */
-				$trackingData = [];
 
-				if ((float) $oldPrice !== (float) $price) {
-					$trackingData[] = [
-						'product_price_id' => $supplier->id,
-						'field' => 'price',
-						'old_value' => $oldPrice,
-						'new_value' => $price,
-						'created_by' => $this->userId,
-					];
-				}
+				if ($existingSupplier) {
+					/* Capture old values before update for tracking */
+					$oldPrice = $existingSupplier->price ?? null;
+					$oldSalePrice = $existingSupplier->sale_price ?? null;
+					$oldInventory = $existingSupplier->inventory ?? null;
+					$trackingData = [];
 
-				if ((float) $oldSalePrice !== (float) $salePrice) {
-					$trackingData[] = [
-						'product_price_id' => $supplier->id,
-						'field' => 'sale_price',
-						'old_value' => $oldSalePrice,
-						'new_value' => $salePrice,
-						'created_by' => $this->userId,
-					];
-				}
+					if ((float) $oldPrice !== (float) $price) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'price',
+							'old_value' => $oldPrice,
+							'new_value' => $price,
+							'created_by' => $this->userId,
+						];
+					}
 
-				if ((int) $oldInventory !== (int) $inventory) {
-					$trackingData[] = [
-						'product_price_id' => $supplier->id,
-						'field' => 'inventory',
-						'old_value' => $oldInventory,
-						'new_value' => $inventory,
-						'created_by' => $this->userId,
-					];
-				}
+					if ((float) $oldSalePrice !== (float) $salePrice) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'sale_price',
+							'old_value' => $oldSalePrice,
+							'new_value' => $salePrice,
+							'created_by' => $this->userId,
+						];
+					}
 
-				if (!empty($trackingData)) {
-					ProductPriceTracking::insert($trackingData);
+					if ((int) $oldInventory !== (int) $inventory) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'inventory',
+							'old_value' => $oldInventory,
+							'new_value' => $inventory,
+							'created_by' => $this->userId,
+						];
+					}
+
+					if (!empty($trackingData)) {
+						ProductPriceTracking::insert($trackingData);
+					}
 				}
 
 				DB::commit();
