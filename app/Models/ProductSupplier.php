@@ -19,8 +19,6 @@ class ProductSupplier extends Model
 		'sale_price',
 		'price',
 		'inventory',
-		'inventory_updated_by',
-		'inventory_updated_at',
 		'in_stock',
 		'min_quantity',
 		'is_fixed',
@@ -46,9 +44,18 @@ class ProductSupplier extends Model
 		return $this->belongsTo(Vendor::class, 'vendor_id');
 	}
 
-	public function inventoryUpdator()
+	public function latestPriceTracking()
 	{
-		return $this->belongsTo(User::class, 'inventory_updated_by');
+		return $this->hasOne(ProductPriceTracking::class, 'product_price_id')
+		->where('field', 'price')
+		->latestOfMany('id');
+	}
+
+	public function latestInventoryTracking()
+	{
+		return $this->hasOne(ProductPriceTracking::class, 'product_price_id')
+		->where('field', 'inventory')
+		->latestOfMany('id');
 	}
 
 	/**

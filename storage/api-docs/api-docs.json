@@ -41118,7 +41118,7 @@
                     "Product Suppliers"
                 ],
                 "summary": "Get all product suppliers",
-                "description": "Returns a list of all product suppliers with pagination, search, and sorting",
+                "description": "Returns paginated list of product suppliers with search, filter and sort support",
                 "operationId": "getProductSuppliers",
                 "parameters": [
                     {
@@ -41134,7 +41134,7 @@
                     {
                         "name": "length",
                         "in": "query",
-                        "description": "Number of records per page.",
+                        "description": "Number of records per page",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -41144,7 +41144,7 @@
                     {
                         "name": "global",
                         "in": "query",
-                        "description": "Global search for All field",
+                        "description": "Global search across all fields",
                         "schema": {
                             "type": "string"
                         }
@@ -41152,20 +41152,43 @@
                     {
                         "name": "product_id",
                         "in": "query",
-                        "description": "Filter by product_id.",
+                        "description": "Filter by product ID",
                         "schema": {
                             "type": "integer"
                         },
-                        "example": "1"
+                        "example": 1
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by product status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "published",
+                                "draft"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filter by vendor country ID",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
                     },
                     {
                         "name": "sort_by",
                         "in": "query",
+                        "description": "Column to sort by",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "id",
                                 "product_name",
+                                "product_sku",
                                 "vendor_name",
                                 "vendor_sku",
                                 "list_price",
@@ -41186,7 +41209,7 @@
                     {
                         "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort direction (asc or desc)",
+                        "description": "Sort direction",
                         "schema": {
                             "type": "string",
                             "enum": [

@@ -23,17 +23,17 @@ class ProductSupplierController extends BaseController
 	 *     operationId="getProductSuppliers",
 	 *     tags={"Product Suppliers"},
 	 *     summary="Get all product suppliers",
-	 *     description="Returns a list of all product suppliers with pagination, search, and sorting",
+	 *     description="Returns paginated list of product suppliers with search, filter and sort support",
+	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
-	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
-	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="product_id", in="query", description="Filter by product_id.", example="1",  @OA\Schema(type="integer")),
-	 *     @OA\Parameter(name="status", in="query", description="........", example="1",  enum=published, draft),
-	 *     @OA\Parameter(name="country_id", in="query", description="Filter by .......", example="1",  @OA\Schema(type="integer")),
-	 *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string", enum={"id", "product_name", "vendor_name", "vendor_sku", "list_price", "multiple", "cost_per_item", "surcharge", "additional_cost", "total_cost_per_item", "sale_price", "price", "margin", "priority", "created_at", "updated_at"})),
-	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search across all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="product_id", in="query", description="Filter by product ID", example=1, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="status", in="query", description="Filter by product status", @OA\Schema(type="string", enum={"published", "draft"})),
+	 *     @OA\Parameter(name="country_id", in="query", description="Filter by vendor country ID", example=1, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column to sort by", @OA\Schema(type="string", enum={"id", "product_name", "product_sku", "vendor_name", "vendor_sku", "list_price", "multiple", "cost_per_item", "surcharge", "additional_cost", "total_cost_per_item", "sale_price", "price", "margin", "priority", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Suppliers retrieved successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
@@ -62,7 +62,8 @@ class ProductSupplierController extends BaseController
 			'vendors.name as vendor_name',
 			'vendors.country_id as vendor_country_id',
 			'countries.name as vendor_country',
-			\DB::raw("CONCAT(UCFIRST(updator.first_name), ' ', UCFIRST(updator.last_name)) as updated_by_name")
+			'updator.first_name as updator_first_name',
+			'updator.last_name as updator_last_name'
 		);
 
 		/* Filter: product id */
@@ -75,7 +76,7 @@ class ProductSupplierController extends BaseController
 			$recordsQuery->where('ec_products.status', $request->input('status'));
 		}
 
-		/* Filter: country */
+		/* Filter: vendor country */
 		if ($request->filled('country_id')) {
 			$recordsQuery->where('vendors.country_id', $request->input('country_id'));
 		}
@@ -92,7 +93,7 @@ class ProductSupplierController extends BaseController
 			});
 		}
 
-		/* Sorting */
+		/* Sorting — map virtual columns to actual table columns */
 		$sortColumnMap = [
 			'product_name' => 'ec_products.name',
 			'product_sku' => 'ec_products.sku',
@@ -106,16 +107,24 @@ class ProductSupplierController extends BaseController
 		/* Count before pagination */
 		$totalRecords = (clone $recordsQuery)->count();
 
-		/* Pagination */
+		/* Pagination calculation */
 		$length = (int) $request->input('length', 20);
 		$page = max((int) $request->input('page', 1), 1);
 		$totalPages = (int) ceil($totalRecords / $length);
 		$page = ($page > $totalPages && $totalPages > 0) ? 1 : $page;
 
+		/* Fetch paginated records */
 		$records = $recordsQuery
 		->offset(($page - 1) * $length)
 		->limit($length)
 		->get();
+
+		/* Build updated_by_name from joined columns — UCFIRST not available in MySQL */
+		$records->transform(function ($record) {
+			$record->updated_by_name = $record->updator_first_name ? ucfirst($record->updator_first_name) . ' ' . ucfirst($record->updator_last_name) : null;
+			unset($record->updator_first_name, $record->updator_last_name);
+			return $record;
+		});
 
 		return response()->json([
 			'success' => true,
@@ -176,20 +185,15 @@ class ProductSupplierController extends BaseController
 			'product_id' => 'required|integer|exists:ec_products,id',
 			'vendor_id' => 'required|integer|exists:vendors,id',
 			'vendor_sku' => 'required|string',
-
 			'list_price' => 'nullable|numeric|required_without:cost_per_item',
 			'multiple' => 'nullable|numeric|required_without:cost_per_item',
 			'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
-
 			'surcharge' => 'nullable|numeric',
 			'additional_cost' => 'nullable|numeric',
-
 			'map' => 'nullable|numeric',
 			'sale_price' => 'nullable|numeric',
 			'price' => 'required|numeric',
-
 			'inventory' => 'nullable|integer',
-
 			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
 			'min_quantity' => 'required|integer',
 			'is_fixed' => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
@@ -199,11 +203,10 @@ class ProductSupplierController extends BaseController
 			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 			'priority' => 'nullable|integer',
-
 			'restocking_fees' => 'nullable|numeric',
 		]);
 
-		/* Check if a record with the same sku and vendor_id already exists */
+		/* Check if a record with the same product_id and vendor_id already exists */
 		$existingEntry = ProductSupplier::where('product_id', $data['product_id'])
 		->where('vendor_id', $data['vendor_id'])
 		->first();
@@ -217,51 +220,46 @@ class ProductSupplierController extends BaseController
 
 		$rowErrors = [];
 
-		/* multiple must be between 0 and 1 */
+		/* Multiple must be between 0 and 1 */
 		if (!empty($data['multiple']) && ($data['multiple'] <= 0 || $data['multiple'] >= 1)) {
 			$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
 		}
 
 		/* MAP logic */
-		if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
+		if (!empty($data['map']) && !empty($data['sale_price']) && (float) $data['map'] > (float) $data['sale_price']) {
 			$rowErrors[] = 'Sale Price cannot be less than MAP.';
 		}
 
-		if (!empty($data['sale_price']) && !empty($data['price']) && (float)$data['price'] < (float)$data['sale_price']) {
+		if (!empty($data['sale_price']) && !empty($data['price']) && (float) $data['price'] < (float) $data['sale_price']) {
 			$rowErrors[] = 'Price cannot be less than sale price.';
 		}
 
-		if (!empty($data['map']) && !empty($data['price']) && (float)$data['price'] < (float)$data['map']) {
+		if (!empty($data['map']) && !empty($data['price']) && (float) $data['price'] < (float) $data['map']) {
 			$rowErrors[] = 'Price cannot be less than MAP.';
 		}
 
 		if (!empty($rowErrors)) {
 			return response()->json([
 				'success' => false,
-				'message' => $rowErrors
+				'message' => $rowErrors,
 			], 422);
 		}
 
 		/* Calculate cost_per_item */
 		$data['cost_per_item'] = (!empty($data['list_price']) && !empty($data['multiple']))
-		? (float)$data['list_price'] * (float)$data['multiple']
-		: (float)($data['cost_per_item'] ?? 0);
+		? (float) $data['list_price'] * (float) $data['multiple']
+		: (float) ($data['cost_per_item'] ?? 0);
 
-		/* Calculate surcharge and additional_cost (as % of cost_per_item) */
-		$data['surcharge'] = !empty($data['surcharge'])
-		? $data['cost_per_item'] * ((float)$data['surcharge'] / 100)
-		: 0;
-
-		$data['additional_cost'] = !empty($data['additional_cost'])
-		? $data['cost_per_item'] * ((float)$data['additional_cost'] / 100)
-		: 0;
+		/* Calculate surcharge and additional_cost as percentage of cost_per_item */
+		$data['surcharge'] = !empty($data['surcharge']) ? $data['cost_per_item'] * ((float) $data['surcharge'] / 100) : 0;
+		$data['additional_cost'] = !empty($data['additional_cost']) ? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100) : 0;
 
 		/* Total cost per item */
 		$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
 
-		/* Price & Sale Price fallback */
-		$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
-		$data['price'] = isset($data['price']) ? (float)$data['price'] : 0;
+		/* Price and sale price */
+		$data['sale_price'] = isset($data['sale_price']) ? (float) $data['sale_price'] : null;
+		$data['price'] = isset($data['price']) ? (float) $data['price'] : 0;
 
 		/* Margin calculation */
 		if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
@@ -272,31 +270,29 @@ class ProductSupplierController extends BaseController
 			$data['margin'] = null;
 		}
 
+		/* Boolean conversions */
 		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
 		$data['is_fixed'] = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
 		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
-		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
-
-		$data['inventory_updated_by'] = auth()->id();
-		$data['inventory_updated_at'] = now();
+		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : ($data['shipping_charge'] ?? 0);
 		$data['created_by'] = auth()->id();
 
 		/* Priority logic */
 		$existingCount = ProductSupplier::where('product_id', $data['product_id'])->count();
 
 		if (empty($data['priority'])) {
-			/* Priority nahi di — last pe set karo */
+			/* Priority not provided — assign last position */
 			$data['priority'] = $existingCount + 1;
 		} else {
-			/* Priority di hai — range check karo (1 to existingCount+1) */
+			/* Priority provided — validate range */
 			if ($data['priority'] < 1 || $data['priority'] > $existingCount + 1) {
 				return response()->json([
 					'success' => false,
-					'message' => "Priority must be between 1 and " . ($existingCount + 1) . ".",
+					'message' => 'Priority must be between 1 and ' . ($existingCount + 1) . '.',
 				], 422);
 			}
 
-			/* Given priority se neeche saare records ki priority +1 karo */
+			/* Shift existing records down to make room for new priority */
 			ProductSupplier::where('product_id', $data['product_id'])
 			->where('priority', '>=', $data['priority'])
 			->increment('priority');
@@ -306,8 +302,8 @@ class ProductSupplierController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => __("msg_create"),
-			'data' => $record
+			'message' => __('msg_create'),
+			'data' => $record,
 		]);
 	}
 
@@ -325,7 +321,7 @@ class ProductSupplierController extends BaseController
 	 */
 	public function show($id)
 	{
-		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name', 'inventoryUpdator:id,first_name,last_name'])->find($id);
+		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name', 'latestPriceTracking:id,old_value,new_value,created_by', 'latestPriceTracking.creator:id,first_name,last_name', 'latestInventoryTracking:id,old_value,new_value,created_by', 'latestInventoryTracking.creator:id,first_name,last_name'])->find($id);
 
 		if (!$productSupplier) {
 			return response()->json([
@@ -379,114 +375,6 @@ class ProductSupplierController extends BaseController
 	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
-	// public function update(Request $request, $id)
-	// {
-	// 	$supplier = ProductSupplier::find($id);
-
-	// 	if (!$supplier) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => 'Supplier not found.'
-	// 		], 404);
-	// 	}
-
-	// 	$data = $request->validate([
-	// 		'product_id' => 'required|integer|exists:ec_products,id',
-	// 		'vendor_id' => 'required|integer|exists:vendors,id',
-	// 		'vendor_sku' => 'required|string',
-
-	// 		'list_price' => 'nullable|numeric|required_without:cost_per_item',
-	// 		'multiple' => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
-	// 		'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
-
-	// 		'surcharge' => 'nullable|numeric',
-	// 		'additional_cost' => 'nullable|numeric',
-
-	// 		'map' => 'nullable|numeric',
-	// 		'sale_price' => 'nullable|numeric',
-	// 		'price' => 'required|numeric',
-
-	// 		'inventory' => 'nullable|integer',
-
-	// 		'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
-	// 		'min_quantity' => 'required|integer',
-	// 		'is_fixed' => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
-	// 		'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
-	// 		'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
-	// 		'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-	// 		'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
-	// 		'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
-
-	// 		'restocking_fees' => 'nullable|numeric',
-	// 	]);
-
-	// 	/* Business rules */
-	// 	$rowErrors = [];
-
-	// 		$data['multiple'] = isset($data['multiple']) ? (float)$data['multiple'] : null;
-	// 		if ($data['multiple'] === 0.0) $data['multiple'] = null;
-
-
-	// 	if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
-	// 		$rowErrors[] = 'Sale Price cannot be less than MAP.';
-	// 	}
-
-	// 	if (!empty($data['sale_price']) && (float)$data['price'] < (float)$data['sale_price']) {
-	// 		$rowErrors[] = 'Price cannot be less than sale price.';
-	// 	}
-
-	// 	if (!empty($data['map']) && (float)$data['price'] < (float)$data['map']) {
-	// 		$rowErrors[] = 'Price cannot be less than MAP.';
-	// 	}
-
-	// 	if (!empty($rowErrors)) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'errors' => $rowErrors
-	// 		], 422);
-	// 	}
-
-	// 	/* Compute cost and margin */
-	// 	$data['cost_per_item'] = ($data['list_price'] !== null && $data['multiple'] !== null)
-	// 	? (float)$data['list_price'] * (float)$data['multiple']
-	// 	: (float)($data['cost_per_item'] ?? 0);
-
-	// 	$data['surcharge'] = !empty($data['surcharge'])
-	// 	? $data['cost_per_item'] * ((float)$data['surcharge'] / 100)
-	// 	: 0;
-
-	// 	$data['additional_cost'] = !empty($data['additional_cost'])
-	// 	? $data['cost_per_item'] * ((float)$data['additional_cost'] / 100)
-	// 	: 0;
-
-	// 	$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
-
-	// 	$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
-	// 	$data['price'] = isset($data['price']) ? (float)$data['price'] : 0;
-
-	// 	if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
-	// 		$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
-	// 	} elseif ($data['price'] > 0) {
-	// 		$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
-	// 	} else {
-	// 		$data['margin'] = null;
-	// 	}
-
-	// 	$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
-	// 	$data['is_fixed'] = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
-	// 	$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
-	// 	$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : $data['shipping_charge'];
-
-	// 	$data['updated_by'] = auth()->id();
-	// 	$supplier->update($data);
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Product supplier updated successfully.',
-	// 		'data' => $supplier
-	// 	], 200);
-	// }
-
 	public function update(Request $request, $id)
 	{
 		$supplier = ProductSupplier::find($id);
@@ -494,96 +382,74 @@ class ProductSupplierController extends BaseController
 		if (!$supplier) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Supplier not found.'
+				'message' => 'Supplier not found.',
 			], 404);
 		}
 
-		// -----------------------------
-		// Validation
-		// -----------------------------
 		$data = $request->validate([
-			'product_id'      => 'required|integer|exists:ec_products,id',
-			'vendor_id'       => 'required|integer|exists:vendors,id',
-			'vendor_sku'      => 'required|string',
-
-			'list_price'      => 'nullable|numeric|required_without:cost_per_item',
-			'multiple'        => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
-			'cost_per_item'   => 'nullable|numeric|required_without_all:list_price,multiple',
-
-			'surcharge'       => 'nullable|numeric',
+			'product_id' => 'required|integer|exists:ec_products,id',
+			'vendor_id' => 'required|integer|exists:vendors,id',
+			'vendor_sku' => 'required|string',
+			'list_price' => 'nullable|numeric|required_without:cost_per_item',
+			'multiple' => 'nullable|numeric|min:0|max:1|required_without:cost_per_item',
+			'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
+			'surcharge' => 'nullable|numeric',
 			'additional_cost' => 'nullable|numeric',
-
-			'map'             => 'nullable|numeric',
-			'sale_price'      => 'nullable|numeric',
-			'price'           => 'required|numeric',
-
-			'inventory'       => 'nullable|integer',
-
-			'in_stock'        => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
-			'min_quantity'    => 'required|integer',
-			'is_fixed'        => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
-			'delivery_days'   => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
-			'return_policy'   => ['required', Rule::in(app_constants('RETURN_POLICY'))],
-			'free_shipping'   => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'map' => 'nullable|numeric',
+			'sale_price' => 'nullable|numeric',
+			'price' => 'required|numeric',
+			'inventory' => 'nullable|integer',
+			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'min_quantity' => 'required|integer',
+			'is_fixed' => ['required', Rule::in(app_constants('IS_FIXED_OPTIONS'))],
+			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
+			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
 			'shipping_charge' => 'nullable|numeric|required_if:free_shipping,No',
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 			'priority' => 'nullable|integer',
-
 			'restocking_fees' => 'nullable|numeric',
 		]);
 
-		// -----------------------------
-		// Normalize numeric values
-		// -----------------------------
-		$data['multiple']    = isset($data['multiple']) ? (float)$data['multiple'] : null;
-		$data['list_price']  = isset($data['list_price']) ? (float)$data['list_price'] : null;
-		$data['cost_per_item'] = isset($data['cost_per_item']) ? (float)$data['cost_per_item'] : 0;
-
-		// Treat 0 as null for multiple (means not applicable)
-		if ($data['multiple'] === 0.0) {
-			$data['multiple'] = null;
-		}
-
-		// -----------------------------
-		// Business rules
-		// -----------------------------
+		/* Business rules */
 		$rowErrors = [];
 
-		if ($data['map'] !== null && $data['sale_price'] !== null && $data['map'] > $data['sale_price']) {
+		$data['multiple'] = isset($data['multiple']) ? (float) $data['multiple'] : null;
+		if ($data['multiple'] === 0.0) $data['multiple'] = null;
+
+		if (!empty($data['map']) && !empty($data['sale_price']) && (float) $data['map'] > (float) $data['sale_price']) {
 			$rowErrors[] = 'Sale Price cannot be less than MAP.';
 		}
 
-		if ($data['sale_price'] !== null && $data['price'] < $data['sale_price']) {
+		if (!empty($data['sale_price']) && (float) $data['price'] < (float) $data['sale_price']) {
 			$rowErrors[] = 'Price cannot be less than sale price.';
 		}
 
-		if ($data['map'] !== null && $data['price'] < $data['map']) {
+		if (!empty($data['map']) && (float) $data['price'] < (float) $data['map']) {
 			$rowErrors[] = 'Price cannot be less than MAP.';
 		}
 
 		if (!empty($rowErrors)) {
 			return response()->json([
 				'success' => false,
-				'errors'  => $rowErrors
+				'errors' => $rowErrors,
 			], 422);
 		}
 
-		// -----------------------------
-		// Compute cost and margin
-		// -----------------------------
+		/* Compute cost and margin */
 		$data['cost_per_item'] = ($data['list_price'] !== null && $data['multiple'] !== null)
-		? $data['list_price'] * $data['multiple']
-		: $data['cost_per_item'];
+		? (float) $data['list_price'] * (float) $data['multiple']
+		: (float) ($data['cost_per_item'] ?? 0);
 
-		$data['surcharge'] = isset($data['surcharge']) ? $data['cost_per_item'] * ($data['surcharge'] / 100) : 0;
-		$data['additional_cost'] = isset($data['additional_cost']) ? $data['cost_per_item'] * ($data['additional_cost'] / 100) : 0;
+		$data['surcharge'] = !empty($data['surcharge']) ? $data['cost_per_item'] * ((float) $data['surcharge'] / 100) : 0;
+		$data['additional_cost'] = !empty($data['additional_cost']) ? $data['cost_per_item'] * ((float) $data['additional_cost'] / 100) : 0;
 		$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
 
-		$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
-		$data['price'] = (float)$data['price'];
+		$data['sale_price'] = isset($data['sale_price']) ? (float) $data['sale_price'] : null;
+		$data['price'] = isset($data['price']) ? (float) $data['price'] : 0;
 
-		// Calculate margin
-		if ($data['sale_price'] !== null && $data['sale_price'] > 0) {
+		/* Margin calculation */
+		if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
 			$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
 		} elseif ($data['price'] > 0) {
 			$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
@@ -591,46 +457,17 @@ class ProductSupplierController extends BaseController
 			$data['margin'] = null;
 		}
 
-		// -----------------------------
-		// Normalize boolean-like values
-		// -----------------------------
-		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (strtolower($data['in_stock'] ?? '') === 'yes' ? 1 : 0);
-		$data['is_fixed'] = strtolower($data['is_fixed'] ?? '') === 'yes' ? 1 : 0;
-		$data['free_shipping'] = strtolower($data['free_shipping'] ?? '') === 'yes' ? 1 : 0;
-
-		// FIXED: Provide default value for shipping_charge
-		$data['shipping_charge'] = $data['free_shipping'] ? 0 : ($data['shipping_charge'] ?? 0);
-
-		// -----------------------------
-		// Save
-		// -----------------------------
+		/* Boolean conversions */
+		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
+		$data['is_fixed'] = !empty($data['is_fixed']) && strtolower($data['is_fixed']) === 'yes' ? 1 : 0;
+		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+		$data['shipping_charge'] = $data['free_shipping'] == 1 ? 0 : ($data['shipping_charge'] ?? 0);
 		$data['updated_by'] = auth()->id();
 
-		/* Track inventory change — update audit fields only if inventory changed */
-		$inventoryChanged = $supplier->inventory != $data['inventory'];
-		if ($inventoryChanged) {
-			$data['inventory_updated_by'] = auth()->id();
-			$data['inventory_updated_at'] = now();
-		}
-
-		/* Only touch updated_at when non-inventory fields changed.
-		inventory + in_stock (derived from inventory) don't count. */
-		$inventoryOnlyKeys = ['inventory', 'in_stock', 'inventory_updated_by', 'inventory_updated_at', 'updated_by'];
-		$hasNonInventoryChanges = collect($data)
-		->except($inventoryOnlyKeys)
-		->filter(fn($value, $key) => $supplier->getAttribute($key) != $value)
-		->isNotEmpty();
-
-		$supplier->timestamps = false;
-		if ($hasNonInventoryChanges) {
-			$data['updated_at'] = now();
-		}
-
-		/* Priority logic */
+		/* Priority logic — only if priority changed */
 		if (!empty($data['priority']) && $data['priority'] != $supplier->priority) {
 			$existingCount = ProductSupplier::where('product_id', $data['product_id'])->count();
 
-			/* Range check — 1 to existingCount */
 			if ($data['priority'] < 1 || $data['priority'] > $existingCount) {
 				return response()->json([
 					'success' => false,
@@ -642,26 +479,67 @@ class ProductSupplierController extends BaseController
 			$newPriority = $data['priority'];
 
 			if ($newPriority < $oldPriority) {
-				/* Moving up — records between new and old-1 ko +1 karo */
+				/* Moving up — shift records between new and old-1 down */
 				ProductSupplier::where('product_id', $data['product_id'])
 				->whereBetween('priority', [$newPriority, $oldPriority - 1])
 				->increment('priority');
 			} else {
-				/* Moving down — records between old+1 and new ko -1 karo */
+				/* Moving down — shift records between old+1 and new up */
 				ProductSupplier::where('product_id', $data['product_id'])
 				->whereBetween('priority', [$oldPriority + 1, $newPriority])
 				->decrement('priority');
 			}
 		}
 
+		/* Capture old values before update for tracking */
+		$oldPrice = $supplier->price;
+		$oldSalePrice = $supplier->sale_price;
+		$oldInventory = $supplier->inventory;
+
 		$supplier->update($data);
-		$supplier->timestamps = true;
+
+		/* Track changes for price, sale_price and inventory — only if value changed */
+		$trackingData = [];
+
+		if ((float) $oldPrice !== (float) $data['price']) {
+			$trackingData[] = [
+				'product_price_id' => $supplier->id,
+				'field' => 'price',
+				'old_value' => $oldPrice,
+				'new_value' => $data['price'],
+				'created_by' => auth()->id(),
+			];
+		}
+
+		if ((float) $oldSalePrice !== (float) $data['sale_price']) {
+			$trackingData[] = [
+				'product_price_id' => $supplier->id,
+				'field' => 'sale_price',
+				'old_value' => $oldSalePrice,
+				'new_value' => $data['sale_price'],
+				'created_by' => auth()->id(),
+			];
+		}
+
+		if ((int) $oldInventory !== (int) $data['inventory']) {
+			$trackingData[] = [
+				'product_price_id' => $supplier->id,
+				'field' => 'inventory',
+				'old_value' => $oldInventory,
+				'new_value' => $data['inventory'],
+				'created_by' => auth()->id(),
+			];
+		}
+
+		if (!empty($trackingData)) {
+			ProductPriceTracking::insert($trackingData);
+		}
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Product supplier updated successfully.',
-			'data'    => $supplier
-		], 200);
+			'data' => $supplier,
+		]);
 	}
 
 	/**
@@ -1286,9 +1164,7 @@ class ProductSupplierController extends BaseController
 		}
 
 		$supplier->priority = $newPriority;
-		$supplier->timestamps = false;
 		$supplier->save();
-		$supplier->timestamps = true;
 
 		return response()->json([
 			'success' => true,
