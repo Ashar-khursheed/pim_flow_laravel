@@ -23,6 +23,7 @@ return new class extends Migration
 		DB::table('product_price_trackings')->insertUsing(
 			['product_price_id', 'field', 'old_value', 'new_value', 'created_by', 'created_at', 'updated_at'],
 			DB::table('product_suppliers')
+			->whereNotNull('inventory')
 			->whereNotNull('inventory_updated_by')
 			->whereNotNull('inventory_updated_at')
 			->select(
