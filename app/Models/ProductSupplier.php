@@ -34,6 +34,16 @@ class ProductSupplier extends Model
 		'updated_by',
 	];
 
+	public function creator()
+	{
+		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function updator()
+	{
+		return $this->belongsTo(User::class, 'updated_by');
+	}
+
 	public function product()
 	{
 		return $this->belongsTo(Product::class, 'product_id');
