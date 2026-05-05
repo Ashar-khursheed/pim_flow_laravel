@@ -289,6 +289,9 @@ class ImportProductSupplierJob implements ShouldQueue
 					$supplier = new ProductSupplier();
 					$supplier->created_by = $this->userId;
 					$supplier->created_at = now();
+
+					/* New supplier — assign last priority */
+					$supplier->priority = ProductSupplier::where('product_id', $productID)->count() + 1;
 				} else {
 					$supplier = $existingSupplier;
 					$supplier->updated_by = $this->userId;
