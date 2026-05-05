@@ -48,12 +48,32 @@ class ProductSupplierController extends BaseController
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
+		/* Subquery — latest inventory tracking per product_price_id */
+		$latestInventoryTracking = \DB::table('product_price_trackings as pit_inv')
+		->select('pit_inv.product_price_id', 'pit_inv.created_by as inventory_updated_by_id', 'pit_inv.created_at as inventory_updated_time')
+		->where('pit_inv.field', 'inventory')
+		->whereRaw('pit_inv.id = (SELECT MAX(pit_inv2.id) FROM product_price_trackings pit_inv2 WHERE pit_inv2.product_price_id = pit_inv.product_price_id AND pit_inv2.field = "inventory")');
+
+		/* Subquery — latest price tracking per product_price_id */
+		$latestPriceTracking = \DB::table('product_price_trackings as pit_prc')
+		->select('pit_prc.product_price_id', 'pit_prc.created_by as price_updated_by_id', 'pit_prc.created_at as price_updated_time')
+		->where('pit_prc.field', 'price')
+		->whereRaw('pit_prc.id = (SELECT MAX(pit_prc2.id) FROM product_price_trackings pit_prc2 WHERE pit_prc2.product_price_id = pit_prc.product_price_id AND pit_prc2.field = "price")');
+
 		/* Join product and vendor tables for sorting, filtering and flat result */
 		$recordsQuery = ProductSupplier::query()
 		->join('ec_products', 'ec_products.id', '=', 'product_suppliers.product_id')
 		->join('vendors', 'vendors.id', '=', 'product_suppliers.vendor_id')
 		->leftJoin('countries', 'countries.id', '=', 'vendors.country_id')
 		->leftJoin('users as updator', 'updator.id', '=', 'product_suppliers.updated_by')
+		->leftJoinSub($latestInventoryTracking, 'inv_tracking', function ($join) {
+			$join->on('inv_tracking.product_price_id', '=', 'product_suppliers.id');
+		})
+		->leftJoin('users as inv_updator', 'inv_updator.id', '=', 'inv_tracking.inventory_updated_by_id')
+		->leftJoinSub($latestPriceTracking, 'prc_tracking', function ($join) {
+			$join->on('prc_tracking.product_price_id', '=', 'product_suppliers.id');
+		})
+		->leftJoin('users as prc_updator', 'prc_updator.id', '=', 'prc_tracking.price_updated_by_id')
 		->select(
 			'product_suppliers.*',
 			'ec_products.name as product_name',
@@ -63,7 +83,13 @@ class ProductSupplierController extends BaseController
 			'vendors.country_id as vendor_country_id',
 			'countries.name as vendor_country',
 			'updator.first_name as updator_first_name',
-			'updator.last_name as updator_last_name'
+			'updator.last_name as updator_last_name',
+			'inv_tracking.inventory_updated_time',
+			'inv_updator.first_name as inv_updator_first_name',
+			'inv_updator.last_name as inv_updator_last_name',
+			'prc_tracking.price_updated_time',
+			'prc_updator.first_name as prc_updator_first_name',
+			'prc_updator.last_name as prc_updator_last_name'
 		);
 
 		/* Filter: product id */
@@ -119,10 +145,25 @@ class ProductSupplierController extends BaseController
 		->limit($length)
 		->get();
 
-		/* Build updated_by_name from joined columns — UCFIRST not available in MySQL */
+		/* Build name fields from joined columns — UCFIRST not available in MySQL */
 		$records->transform(function ($record) {
 			$record->updated_by_name = $record->updator_first_name ? ucfirst($record->updator_first_name) . ' ' . ucfirst($record->updator_last_name) : null;
-			unset($record->updator_first_name, $record->updator_last_name);
+			$record->inventory_updator_name = $record->inv_updator_first_name ? ucfirst($record->inv_updator_first_name) . ' ' . ucfirst($record->inv_updator_last_name) : null;
+			$record->price_updator_name = $record->prc_updator_first_name ? ucfirst($record->prc_updator_first_name) . ' ' . ucfirst($record->prc_updator_last_name) : null;
+			$record->price_updating_time = $record->price_updated_time ?? null;
+			$record->inventory_updating_time = $record->inventory_updated_time ?? null;
+
+			unset(
+				$record->updator_first_name,
+				$record->updator_last_name,
+				$record->inv_updator_first_name,
+				$record->inv_updator_last_name,
+				$record->prc_updator_first_name,
+				$record->prc_updator_last_name,
+				$record->price_updated_time,
+				$record->inventory_updated_time
+			);
+
 			return $record;
 		});
 
