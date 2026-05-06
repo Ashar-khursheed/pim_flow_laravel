@@ -546,7 +546,7 @@ class ProductController extends Controller
 	public function getAllPublicProducts(Request $request)
 	{
 		// Start building the base query
-		$query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews', 'seoUrl', 'accessories.items', 'productVariants'])->where('status', 'published');
+		$query = Product::with(['categories', 'brand', 'bestSupplier', 'brand.products.reviews', 'seoUrl', 'accessories.items', 'productVariants'])->where('status', 'published');
 
 		$productId = $request->input('product_id'); // numeric ID
 		$slug = $request->input('slug');           // string slug
@@ -592,7 +592,7 @@ class ProductController extends Controller
 			},
 			'currency',
 			'categories',
-			'productSuppliers',
+			'bestSupplier',
 			'seoUrl',
 			'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
@@ -805,39 +805,48 @@ class ProductController extends Controller
 			$product->avg_rating = $avgRating;
 			$product->leftStock = $leftStock;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
-			if ($firstSupplier) {
-				$product->vendor_sku = $firstSupplier->vendor_sku;
+			// dd($bestSupplier->toArray());
 
-				$product->vendor_country = $firstSupplier->vendor->country->name ?? null;
-				$product->vendor_city = $firstSupplier->vendor->city->name ?? null;
-				$product->vendor_address = $firstSupplier->vendor->address ?? null;
-				$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
+			if ($bestSupplier) {
+				$product->vendor_sku = $bestSupplier->vendor_sku;
 
-				$product->price = (float) $firstSupplier->price;
-				$product->sale_price = (float) $firstSupplier->sale_price;
-				$product->original_price = (float) $firstSupplier->price;
-				$product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-				$product->best_price = (float) $firstSupplier->price;
-				$product->vendor_id = $firstSupplier->vendor_id;
-				$product->map = (float) $firstSupplier->map;
-				$product->inventory = $firstSupplier->inventory;
-				$product->inventory_updated_by = $firstSupplier->inventoryUpdator->name ?? null;
-				$product->inventory_updated_at = $firstSupplier->inventory_updated_at ?? null;
-				$product->in_stock = $firstSupplier->in_stock;
-				$product->delivery_days = $firstSupplier->delivery_days;
-				$product->return_policy = $firstSupplier->return_policy;
-				$product->free_shipping = $firstSupplier->free_shipping;
-				$product->warranty_information = $firstSupplier->warranty_information;
-				$product->min_quantity = $firstSupplier->min_quantity;
-				$product->is_fixed = $firstSupplier->is_fixed;
+				$product->vendor_country = $bestSupplier->vendor->country->name ?? null;
+				$product->vendor_city = $bestSupplier->vendor->city->name ?? null;
+				$product->vendor_address = $bestSupplier->vendor->address ?? null;
+				$product->vendor_zipcode = $bestSupplier->vendor->zipcode ?? null;
+
+				$product->price = (float) $bestSupplier->price;
+				$product->sale_price = (float) $bestSupplier->sale_price;
+				$product->original_price = (float) $bestSupplier->price;
+				$product->front_sale_price = (float) ($bestSupplier->sale_price ?? $bestSupplier->price);
+				$product->best_price = (float) $bestSupplier->price;
+				$product->vendor_id = $bestSupplier->vendor_id;
+				$product->map = (float) $bestSupplier->map;
+				$product->inventory = $bestSupplier->inventory;
+				$product->inventory_updated_by = $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name;
+				$product->inventory_updated_at = $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s');
+				$product->price_updated_by = $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name;
+				$product->price_updated_at = $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s');
+				$product->in_stock = $bestSupplier->in_stock;
+				$product->delivery_days = $bestSupplier->delivery_days;
+				$product->return_policy = $bestSupplier->return_policy;
+				$product->free_shipping = $bestSupplier->free_shipping;
+				$product->warranty_information = $bestSupplier->warranty_information;
+				$product->min_quantity = $bestSupplier->min_quantity;
+				$product->is_fixed = $bestSupplier->is_fixed;
 			} else {
 				// Defaults if no supplier exists
 				$product->vendor_sku = null;
@@ -963,9 +972,7 @@ class ProductController extends Controller
 
 				// Fetch all child products at once
 				$children = Product::whereIn('id', $childIds)
-				->with(['productSuppliers' => function($q) {
-					$q->select('product_id', 'price', 'sale_price');
-				}])
+				->with(['bestSupplier:id,product_id,price,sale_price'])
 				->select('id', 'sku', 'images')
 				->get();
 
@@ -1018,7 +1025,7 @@ class ProductController extends Controller
 					// 🔍 DEBUG - Log selection check
 
 					// Get pricing from first supplier
-						$firstSupplier = $child->productSuppliers->first();
+						$firstSupplier = $child->bestSupplier->first();
 						$price = $firstSupplier ? (float) $firstSupplier->price : 0;
 						$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
 
