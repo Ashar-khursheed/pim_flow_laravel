@@ -16,6 +16,7 @@ use Throwable;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\ProductSupplier;
+use App\Models\ProductPriceTracking;
 use App\Models\TransactionLog;
 
 class ImportProductSupplierJob implements ShouldQueue
@@ -289,67 +290,93 @@ class ImportProductSupplierJob implements ShouldQueue
 					$supplier->created_by = $this->userId;
 					$supplier->created_at = now();
 
-					$supplier->inventory_updated_by = $this->userId;
-					$supplier->inventory_updated_at = now();
+					/* New supplier — assign last priority */
+					$supplier->priority = ProductSupplier::where('product_id', $productID)->count() + 1;
 				} else {
 					$supplier = $existingSupplier;
 					$supplier->updated_by = $this->userId;
 					$supplier->updated_at = now();
-
-					/* Track inventory change — update audit fields only if inventory changed */
-					if ($existingSupplier->inventory != $inventory) {
-						$supplier->inventory_updated_by = $this->userId;
-						$supplier->inventory_updated_at = now();
-					}
 				}
 
 				/* Set values */
 				$supplier->product_id = $productID;
 				$supplier->vendor_id = $vendorID;
 				$supplier->vendor_sku = $vendor_sku;
-
-				$supplier->list_price = $list_price !== null ? (float)$list_price : null;
-				$supplier->multiple = $multiple !== null ? (float)$multiple : null;
+				$supplier->list_price = $list_price !== null ? (float) $list_price : null;
+				$supplier->multiple = $multiple !== null ? (float) $multiple : null;
 				$supplier->cost_per_item = $costPerItem;
-				$supplier->surcharge = $surcharge !== null ? (float)$surcharge : null;
-				$supplier->additional_cost = $additional_cost !== null ? (float)$additional_cost : null;
+				$supplier->surcharge = $surcharge !== null ? (float) $surcharge : null;
+				$supplier->additional_cost = $additional_cost !== null ? (float) $additional_cost : null;
 				$supplier->total_cost_per_item = $totalCostPerItem;
-
-				$supplier->map = $map !== null ? (float)$map : null;
+				$supplier->map = $map !== null ? (float) $map : null;
 				$supplier->sale_price = $salePrice;
 				$supplier->price = $price;
-
-				$supplier->inventory = !empty($inventory) ? (int)$inventory : null;
-
-				$supplier->in_stock = ($inventory > 0)
-				? 1
-				: (!empty($in_stock) && strtolower($in_stock) === 'yes' ? 1 : 0);
-
-				$supplier->min_quantity = !empty($min_quantity) ? (int)$min_quantity : 1;
+				$supplier->inventory = !empty($inventory) ? (int) $inventory : null;
+				$supplier->in_stock = ($inventory > 0) ? 1 : (!empty($in_stock) && strtolower($in_stock) === 'yes' ? 1 : 0);
+				$supplier->min_quantity = !empty($min_quantity) ? (int) $min_quantity : 1;
 				$supplier->is_fixed = (!empty($is_fixed) && strtolower($is_fixed) === 'yes') ? 1 : 0;
 				$supplier->delivery_days = $delivery_days;
 				$supplier->return_policy = $return_policy;
-
 				$supplier->free_shipping = (!empty($free_shipping) && strtolower($free_shipping) === 'yes') ? 1 : 0;
 				$supplier->shipping_charge = $supplier->free_shipping == 1 ? 0 : $shipping_charge;
 				$supplier->margin = $margin;
-
-				$supplier->restocking_fees = $restocking_fees !== null ? (float)$restocking_fees : null;
-				$supplier->warranty_information = $warranty_information !== null ? (float)$warranty_information : null;
-
+				$supplier->restocking_fees = $restocking_fees !== null ? (float) $restocking_fees : null;
+				$supplier->warranty_information = $warranty_information !== null ? (float) $warranty_information : null;
 				$supplier->save();
+
+				/* Track changes for price, sale_price and inventory — only if value changed */
+
+				if ($existingSupplier) {
+					/* Capture old values before update for tracking */
+					$oldPrice = $existingSupplier->price ?? null;
+					$oldSalePrice = $existingSupplier->sale_price ?? null;
+					$oldInventory = $existingSupplier->inventory ?? null;
+					$trackingData = [];
+
+					if ((float) $oldPrice !== (float) $price) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'price',
+							'old_value' => $oldPrice,
+							'new_value' => $price,
+							'created_by' => $this->userId,
+						];
+					}
+
+					if ((float) $oldSalePrice !== (float) $salePrice) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'sale_price',
+							'old_value' => $oldSalePrice,
+							'new_value' => $salePrice,
+							'created_by' => $this->userId,
+						];
+					}
+
+					if ((int) $oldInventory !== (int) $inventory) {
+						$trackingData[] = [
+							'product_price_id' => $supplier->id,
+							'field' => 'inventory',
+							'old_value' => $oldInventory,
+							'new_value' => $inventory,
+							'created_by' => $this->userId,
+						];
+					}
+
+					if (!empty($trackingData)) {
+						ProductPriceTracking::insert($trackingData);
+					}
+				}
 
 				DB::commit();
 				$success++;
 			} catch (Throwable $e) {
 				DB::rollBack();
-
 				$rowErrors = [
 					'Error processing row: ' . $e->getMessage(),
 					'File: ' . $e->getFile(),
-					'Line: ' . $e->getLine()
+					'Line: ' . $e->getLine(),
 				];
-
 				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 			}

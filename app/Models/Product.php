@@ -271,7 +271,7 @@ class Product extends Model implements TranslatableContract
 	public function bestSupplier()
 	{
 		return $this->hasOne(ProductSupplier::class, 'product_id')
-		->orderBy('priority', 'asc');
+		->ofMany('priority', 'min');
 	}
 
 	public function productVariants()
