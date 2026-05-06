@@ -54,6 +54,11 @@ class ProductSupplier extends Model
 		return $this->belongsTo(Vendor::class, 'vendor_id');
 	}
 
+	public function inventoryUpdator()
+	{
+		return $this->belongsTo(User::class, 'inventory_updated_by');
+	}
+
 	public function latestPriceTracking()
 	{
 		return $this->hasOne(ProductPriceTracking::class, 'product_price_id')
