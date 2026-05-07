@@ -94,7 +94,7 @@ class ProductController extends Controller
 		$product = Product::with([
 			'categories.seoUrl',
 			'brand.seoUrl',
-			'productSuppliers',
+			'bestSupplier',
 			'seoUrl',
 			'accessories.items',
 			'productVariants',
@@ -260,35 +260,41 @@ class ProductController extends Controller
 		$product->in_wishlist = $isInWishlist;
 
 		// Supplier info
-		$firstSupplier = $product->productSuppliers()
+		$bestSupplier = $product->bestSupplier()
 		->with([
+			'creator:id,first_name,last_name',
+			'vendor:id,name,country_id,city_id,address,zipcode',
 			'vendor.country:id,name',
-			'vendor.city:id,name'
+			'vendor.city:id,name',
+			'latestPriceTracking',
+			'latestPriceTracking.creator:id,first_name,last_name',
+			'latestInventoryTracking',
+			'latestInventoryTracking.creator:id,first_name,last_name',
 		])
 		->first();
 
-		if ($firstSupplier) {
-			$product->vendor_sku = $firstSupplier->vendor_sku;
+		if ($bestSupplier) {
+			$product->vendor_sku = $bestSupplier->vendor_sku;
 
-			$product->vendor_country = $firstSupplier->vendor->country->name ?? null;
-			$product->vendor_city = $firstSupplier->vendor->city->name ?? null;
-			$product->vendor_address = $firstSupplier->vendor->address ?? null;
-			$product->vendor_zipcode = $firstSupplier->vendor->zipcode ?? null;
+			$product->vendor_country = $bestSupplier->vendor->country->name ?? null;
+			$product->vendor_city = $bestSupplier->vendor->city->name ?? null;
+			$product->vendor_address = $bestSupplier->vendor->address ?? null;
+			$product->vendor_zipcode = $bestSupplier->vendor->zipcode ?? null;
 
-			$product->price = (float) $firstSupplier->price;
-			$product->sale_price = (float) $firstSupplier->sale_price;
-			$product->original_price = (float) $firstSupplier->price;
-			$product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-			$product->best_price = (float) $firstSupplier->price;
-			$product->vendor_id = $firstSupplier->vendor_id;
-			$product->map = (float) $firstSupplier->map;
-			$product->inventory = $firstSupplier->inventory;
-			$product->in_stock = $firstSupplier->in_stock;
-			$product->delivery_days = $firstSupplier->delivery_days;
-			$product->return_policy = $firstSupplier->return_policy;
-			$product->free_shipping = $firstSupplier->free_shipping;
-			$product->min_quantity = $firstSupplier->min_quantity;
-			$product->is_fixed = $firstSupplier->is_fixed;
+			$product->price = (float) $bestSupplier->price;
+			$product->sale_price = (float) $bestSupplier->sale_price;
+			$product->original_price = (float) $bestSupplier->price;
+			$product->front_sale_price = (float) ($bestSupplier->sale_price ?? $bestSupplier->price);
+			$product->best_price = (float) $bestSupplier->price;
+			$product->vendor_id = $bestSupplier->vendor_id;
+			$product->map = (float) $bestSupplier->map;
+			$product->inventory = $bestSupplier->inventory;
+			$product->in_stock = $bestSupplier->in_stock;
+			$product->delivery_days = $bestSupplier->delivery_days;
+			$product->return_policy = $bestSupplier->return_policy;
+			$product->free_shipping = $bestSupplier->free_shipping;
+			$product->min_quantity = $bestSupplier->min_quantity;
+			$product->is_fixed = $bestSupplier->is_fixed;
 		} else {
 			$product->vendor_sku = null;
 			$product->price = 0;
@@ -380,7 +386,7 @@ class ProductController extends Controller
 
 			// ✅ BATCH LOAD all data at once
 				$children = Product::whereIn('id', $childIds)
-				->with(['productSuppliers' => function($q) {
+				->with(['bestSupplier' => function($q) {
 					$q->select('product_id', 'price', 'sale_price');
 				}])
 				->select('id', 'sku', 'images')
@@ -437,7 +443,18 @@ class ProductController extends Controller
 						$isSelected = isset($currentProductAttributes[$attributeId])
 						&& $currentProductAttributes[$attributeId] == $attrValue;
 
-						$firstSupplier = $child->productSuppliers->first();
+						$bestSupplier = $product->bestSupplier()
+						->with([
+							'creator:id,first_name,last_name',
+							'vendor:id,name,country_id,city_id,address,zipcode',
+							'vendor.country:id,name',
+							'vendor.city:id,name',
+							'latestPriceTracking',
+							'latestPriceTracking.creator:id,first_name,last_name',
+							'latestInventoryTracking',
+							'latestInventoryTracking.creator:id,first_name,last_name',
+						])
+						->first();
 
 						$slug = $seoUrls[$childId] ?? null;
 						$urls = $categoryUrlsMap[$childId] ?? ['parent' => '', 'child' => ''];
@@ -453,8 +470,8 @@ class ProductController extends Controller
 							'type' => $v['type'] ?? 'dropdown',
 							'label' => $v['labels'] ?? $attributeName,
 							'selected' => $isSelected,
-							'price' => $firstSupplier ? (float) $firstSupplier->price : 0,
-							'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : 0,
+							'price' => $bestSupplier ? (float) $bestSupplier->price : 0,
+							'sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : 0,
 							'images' => json_decode($child->images, true) ?? [],
 							'slug' => $slug,
 							'parent_slug' => $urls['parent'],
@@ -1025,9 +1042,9 @@ class ProductController extends Controller
 					// 🔍 DEBUG - Log selection check
 
 					// Get pricing from first supplier
-						$firstSupplier = $child->bestSupplier->first();
-						$price = $firstSupplier ? (float) $firstSupplier->price : 0;
-						$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : 0;
+						$bestSupplier = $child->bestSupplier->first();
+						$price = $bestSupplier ? (float) $bestSupplier->price : 0;
+						$salePrice = $bestSupplier ? (float) $bestSupplier->sale_price : 0;
 
 					// Decode images
 						$images = json_decode($child->images, true) ?? [];
@@ -1181,7 +1198,7 @@ class ProductController extends Controller
 		->with([
 			'reviews:id,product_id,star',
 			'currency',
-			'productSuppliers',
+			'bestSupplier',
 			'seoUrl'
 		])
 		->get();
@@ -1229,11 +1246,16 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -1262,32 +1284,34 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => (float) $firstSupplier->price,
-				"sale_price" => (float) $firstSupplier->sale_price,
-				"original_price" => (float) $firstSupplier->price,
-				'front_sale_price' => (float) $firstSupplier->sale_price,
-				"best_price" => (float) $firstSupplier->price,
+				'price' => (float) $bestSupplier->price,
+				"sale_price" => (float) $bestSupplier->sale_price,
+				"original_price" => (float) $bestSupplier->price,
+				'front_sale_price' => (float) $bestSupplier->sale_price,
+				"best_price" => (float) $bestSupplier->price,
 				"selling_type" => $sellingType ?? null,
 				"per_unit_price" => $details->per_unit_price ?? null,
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float) $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float) $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
@@ -1372,7 +1396,7 @@ class ProductController extends Controller
 		// Get paginated products with relationships
 		$products = $brand->products()
 		->where('status', 'published')
-		->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl'])
+		->with(['reviews:id,product_id,star', 'currency', 'bestSupplier', 'seoUrl'])
 		->paginate($perPage);
 
 		// Transform each product
@@ -1405,11 +1429,16 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -1437,38 +1466,40 @@ class ProductController extends Controller
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => (float) $firstSupplier->price,
-				"sale_price" => (float) $firstSupplier->sale_price,
-				"original_price" => (float) $firstSupplier->price,
-				'front_sale_price' => (float) $firstSupplier->sale_price,
-				"best_price" => (float) $firstSupplier->price,
+				'price' => (float) $bestSupplier->price,
+				"sale_price" => (float) $bestSupplier->sale_price,
+				"original_price" => (float) $bestSupplier->price,
+				'front_sale_price' => (float) $bestSupplier->sale_price,
+				"best_price" => (float) $bestSupplier->price,
 				"selling_type" => $sellingType ?? null,
 				"per_unit_price" => $details->per_unit_price ?? null,
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float) $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float) $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
 		});
 
-		return response()->json([
+		return response()->json([//
 			'success' => true,
 			'message' => 'Products fetched successfully',
 			'current_page' => $products->currentPage(),
@@ -1554,7 +1585,7 @@ class ProductController extends Controller
 		->where('status', 'published')
 		->whereNotNull('sale_price')
 		->where('sale_price', '>', 0)
-		->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl'])
+		->with(['reviews:id,product_id,star', 'currency', 'bestSupplier', 'seoUrl'])
 		->paginate($perPage);
 
 		$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
@@ -1572,11 +1603,16 @@ class ProductController extends Controller
 			$unitsSold = $product->units_sold ?? 0;
 			$leftStock = $quantity - $unitsSold;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -1603,32 +1639,34 @@ class ProductController extends Controller
 					: ($product->price . ' ' . $product->currency->symbol))
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => (float) $firstSupplier->price,
-				"sale_price" => (float) $firstSupplier->sale_price,
-				"original_price" => (float) $firstSupplier->price,
-				'front_sale_price' => (float) $firstSupplier->sale_price,
-				"best_price" => (float) $firstSupplier->price,
+				'price' => (float) $bestSupplier->price,
+				"sale_price" => (float) $bestSupplier->sale_price,
+				"original_price" => (float) $bestSupplier->price,
+				'front_sale_price' => (float) $bestSupplier->sale_price,
+				"best_price" => (float) $bestSupplier->price,
 				"selling_type" => $sellingType ?? null,
 				"per_unit_price" => $details->per_unit_price ?? null,
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float) $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float) $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
@@ -1822,7 +1860,7 @@ class ProductController extends Controller
 		$products = Product::with([
 			'reviews',
 			'currency',
-			'productSuppliers',
+			'bestSupplier',
 			'sellingUnitAttribute',
 			'ingredientsAttribute',
 			'seoUrl'
@@ -1887,17 +1925,23 @@ class ProductController extends Controller
 			}
 			$product->per_unit_price = $perUnitPrice;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
-				'vendor.city:id,name'
+				'vendor.city:id,name',
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
-			$price = $firstSupplier ? (float) $firstSupplier->price : null;
-			$salePrice = $firstSupplier ? (float) $firstSupplier->sale_price : null;
-			$vendorSku = $firstSupplier?->vendor_sku;
-			$vendorId = $firstSupplier?->vendor_id;
+			$price = $bestSupplier ? (float) $bestSupplier->price : null;
+			$salePrice = $bestSupplier ? (float) $bestSupplier->sale_price : null;
+			$vendorSku = $bestSupplier?->vendor_sku;
+			$vendorId = $bestSupplier?->vendor_id;
 
 			return [
 				"id" => $product->id,
@@ -1914,10 +1958,10 @@ class ProductController extends Controller
 				"alt_tags" => $cleanedAlt,
 				"vendor_sku" => $vendorSku,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
 				"price" => $price ?? 0,
 				"sale_price" => $salePrice ?? 0,
@@ -1927,15 +1971,15 @@ class ProductController extends Controller
 				"selling_type" => $sellingType,
 				"per_unit_price" => $product->per_unit_price,
 				"vendor_id" => $vendorId,
-				"map" => $firstSupplier ? (float) $firstSupplier->map : 0,
-				"inventory" => $firstSupplier->inventory ?? null,
-				"in_stock" => $firstSupplier->in_stock ?? null,
-				"delivery_days" => $firstSupplier->delivery_days ?? null,
-				"return_policy" => $firstSupplier->return_policy ?? null,
-				"free_shipping" => $firstSupplier->free_shipping ?? null,
-				"warranty_information" => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				"map" => $bestSupplier ? (float) $bestSupplier->map : 0,
+				"inventory" => $bestSupplier->inventory ?? null,
+				"in_stock" => $bestSupplier->in_stock ?? null,
+				"delivery_days" => $bestSupplier->delivery_days ?? null,
+				"return_policy" => $bestSupplier->return_policy ?? null,
+				"free_shipping" => $bestSupplier->free_shipping ?? null,
+				"warranty_information" => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
@@ -2035,7 +2079,7 @@ class ProductController extends Controller
 		$allCategoryIds[] = $categoryId; // <-- include parent category
 
 
-		$products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
+		$products = Product::with(['reviews', 'currency', 'bestSupplier', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
 		->where('status', 'published')
 
 		->whereHas('categories', function ($query) use ($allCategoryIds) {
@@ -2119,11 +2163,16 @@ class ProductController extends Controller
 
 			$product->per_unit_price = $perUnitPrice;
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -2150,32 +2199,34 @@ class ProductController extends Controller
 					: ($product->price . ' ' . $product->currency->symbol))
 				: $product->price,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => (float) ($firstSupplier->price ?? $product->price ?? 0),
-				'sale_price' => (float) ($firstSupplier->sale_price ?? $product->sale_price ?? 0),
-				'original_price' => (float) ($firstSupplier->price ?? $product->price ?? 0),
-				'front_sale_price' => (float) ($firstSupplier->sale_price ?? $product->sale_price ?? 0),
-				"best_price" => (float) $firstSupplier->price,
+				'price' => (float) ($bestSupplier->price ?? $product->price ?? 0),
+				'sale_price' => (float) ($bestSupplier->sale_price ?? $product->sale_price ?? 0),
+				'original_price' => (float) ($bestSupplier->price ?? $product->price ?? 0),
+				'front_sale_price' => (float) ($bestSupplier->sale_price ?? $product->sale_price ?? 0),
+				"best_price" => (float) $bestSupplier->price,
 				"selling_type" => $sellingType,
 				"per_unit_price" => $product->per_unit_price,
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float) $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float) $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];
@@ -2439,7 +2490,7 @@ class ProductController extends Controller
 			return response()->json(['message' => 'Invalid product URL'], 404);
 		}
 
-		$product = Product::with(['brand', 'productSuppliers'])->find($seo->relational_id);
+		$product = Product::with(['brand', 'bestSupplier'])->find($seo->relational_id);
 
 		if (!$product) {
 			return response()->json(['message' => 'Product not found'], 404);
@@ -2447,9 +2498,9 @@ class ProductController extends Controller
 
 		return response()->json([
 			'Brand' => $product->brand ? $product->brand->name : null,
-			'Delivery_days' => $product->productSuppliers->first()->delivery_days ?? null,
-			'Return_policy' => $product->productSuppliers->first()->return_policy ?? null,
-			'Free_shipping' => ($product->productSuppliers->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
+			'Delivery_days' => $product->bestSupplier->first()->delivery_days ?? null,
+			'Return_policy' => $product->bestSupplier->first()->return_policy ?? null,
+			'Free_shipping' => ($product->bestSupplier->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
 
 		]);
 	}
@@ -2552,418 +2603,7 @@ class ProductController extends Controller
 	 *     )
 	 * )
 	 */
-	// public function saleProductsByCategory(Request $request, $id = null)
-	// {
-	// 	$perPage = $request->get('per_page', 10);
-
-	// 	// Filters
-	// 	$minPrice = $request->get('min_price');
-	// 	$maxPrice = $request->get('max_price');
-	// 	$search = $request->get('search');
-	// 	$minRating = $request->get('min_rating');
-	// 	$onlyInStock = $request->get('in_stock');
-	// 	$sort = $request->get('sort');
-	// 	$brandId = $request->get('brand_id');
-	// 	$categoryId = $request->get('category_id') ?? $id;
-
-	// 	// Custom category sort sequence
-	// 	$categoryOrderNames = [
-	// 		'White Dinnerware', 'Coloured Chinaware', 'Cutlery', 'Glassware',
-	// 		'Glass Racks', 'Serving & Table Accessories', 'Salt and Pepper Mills',
-	// 		'Bread Baskets', 'Kitchen Utensils & Tools', 'Pizza Utensils',
-	// 		'Pastry', 'Cast Iron', 'Buffetware', 'Disposables',
-	// 		'Bar Items', 'Child Friendly'
-	// 	];
-
-	// 	$categorySortMap = [];
-
-	// 	foreach ($categoryOrderNames as $index => $name) {
-	// 		// Use LIKE to be more improved against spacing/case issues
-	// 		$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
-
-	// 		if ($cat) {
-	// 			// Assign the parent category ID to this index (priority)
-	// 			$categorySortMap[$cat->id] = $index;
-
-	// 			// Also assign all DESCENDANT category IDs to this same index
-	// 			// This ensures "Black Dinnerware" gets the same priority as "Coloured Chinaware"
-	// 			$descendants = $cat->getLeafCategories()->pluck('id');
-	// 			foreach ($descendants as $childId) {
-	// 				// Only set if not already set (higher priority wins if overlap)
-	// 				if (!isset($categorySortMap[$childId])) {
-	// 					$categorySortMap[$childId] = $index;
-	// 				}
-	// 			}
-
-	// 			// Also get intermediate children if getLeafCategories only returns tips
-	// 			// A safer approach for a tree is to just get all children recursive
-	// 			$allChildren = $cat->childrenRecursive;
-	// 			// Flatten function to get all IDs
-	// 			$traverse = function($categories) use (&$traverse, &$categorySortMap, $index) {
-	// 				foreach ($categories as $category) {
-	// 					if (!isset($categorySortMap[$category->id])) {
-	// 						$categorySortMap[$category->id] = $index;
-	// 					}
-	// 					$traverse($category->childrenRecursive);
-	// 				}
-	// 			};
-	// 			$traverse($allChildren);
-
-	// 		}
-	// 	}
-
-	// 	// Log the count of IDs found for debugging
-	// 	Log::info('Category Sort Map Count: ' . count($categorySortMap));
-
-	// 	// Wishlist logic
-	// 	$userId = Auth::id();
-	// 	$wishlistProductIds = $userId
-	// 	? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int)$id)->toArray()
-	// 	: session()->get('guest_wishlist', []);
-
-	// 	// Base Query → No category filter by default
-	// 	$query = Product::query()
-	// 	->where('status', 'published')
-	// 	->whereHas('productSuppliers', function ($q) {
-	// 		$q->whereNotNull('sale_price')
-	// 		  ->where('sale_price', '>', 0)
-	// 		  ->where('updated_at', '>=', '2026-02-05');
-	// 	})
-	// 	->with([
-	// 		'reviews:id,product_id,star',
-	// 		'currency',
-	// 		'productSuppliers',
-	// 		'seoUrl',
-	// 		'sellingUnitAttribute',
-	// 		'ingredientsAttribute',
-	// 		'brand:id,name',
-	// 		'productAttributes' => function ($query) {
-	// 			$query->whereHas('attributeDetails', function ($q) {
-	// 				$q->whereIn('name', ['Units per Case', 'Pack Type']);
-	// 			});
-	// 		}
-	// 	]);
-
-	// 	// If Category ID is provided, apply category filter
-	// 	if ($categoryId) {
-	// 		$category = Category::find($categoryId);
-
-	// 		if (!$category) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => 'Category not found',
-	// 			], 404);
-	// 		}
-
-	// 		// Filter by category
-	// 		$query->whereHas('categories', function ($q) use ($categoryId) {
-	// 			$q->where('category_id', $categoryId);
-	// 		});
-	// 	}
-
-	// 	// ---------------- Filters -----------------
-
-	// 	if ($search) {
-	// 		$query->where(function($q) use ($search) {
-	// 			// Smart search with fuzzy matching for typos
-	// 			$q->where('name', 'LIKE', "%$search%")
-	// 				->orWhere('sku', 'LIKE', "%$search%")
-	// 				// Fuzzy match using SOUNDEX for phonetic similarity
-	// 				->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
-	// 				// Search in brand names
-	// 				->orWhereHas('brand', function($brandQ) use ($search) {
-	// 					$brandQ->where('name', 'LIKE', "%$search%")
-	// 						   ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
-	// 				})
-	// 				// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
-	// 				->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
-	// 				// Word-by-word AND matching (All words must be present in Name, SKU, or Brand)
-	// 				->orWhere(function($subQ) use ($search) {
-	// 					$words = explode(' ', $search);
-	// 					if (count($words) > 1) {
-	// 						foreach ($words as $word) {
-	// 							if (strlen($word) > 2) {
-	// 								$subQ->where(function($wordQ) use ($word) {
-	// 									$wordQ->where('name', 'LIKE', "%$word%")
-	// 										  ->orWhere('sku', 'LIKE', "%$word%")
-	// 										  ->orWhereHas('brand', function($bq) use ($word) {
-	// 											  $bq->where('name', 'LIKE', "%$word%");
-	// 										  });
-	// 								});
-	// 							}
-	// 						}
-	// 					} else {
-	// 						$subQ->whereRaw('0 = 1'); // Only 1 word, handled by main logic
-	// 					}
-	// 				});
-
-	// 				// Consonant-based fuzzy search for typos (e.g. "ballini" matches "Bellini")
-	// 				// We only do this if the search term is reasonable length to avoid massive matches
-	// 				if (strlen($search) >= 4) {
-	// 					// Create a pattern where vowels are wildcards
-	// 					// e.g. "ballini" -> "%b%l%l%n%"
-	// 					$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
-	// 					// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
-	// 					$fuzzyPattern = '%' . $consonants . '%';
-
-	// 					// Only apply if we have enough "skeleton" to match on
-	// 					if (strlen($consonants) >= 3) {
-	// 						$q->orWhere('name', 'LIKE', $fuzzyPattern);
-	// 					}
-	// 				}
-	// 		});
-	// 	}
-
-
-	// 	if ($minPrice) {
-	// 		$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
-	// 			$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
-	// 		});
-	// 	}
-
-	// 	if ($maxPrice) {
-	// 		$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
-	// 			$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
-	// 		});
-	// 	}
-
-	// 	if ($minRating) {
-	// 		$query->whereHas('reviews', function ($r) use ($minRating) {
-	// 			$r->havingRaw('AVG(star) >= ?', [$minRating]);
-	// 		});
-	// 	}
-
-	// 	if ($onlyInStock == 1) {
-	// 		$query->whereHas('productSuppliers', function ($q) {
-	// 			$q->where('inventory', '>', 0)->where('in_stock', 1);
-	// 		});
-	// 	}
-
-	// 	// Brand filter
-	// 	if ($brandId) {
-	// 		$brandIds = is_array($brandId) ? $brandId : explode(',', $brandId);
-	// 		$brandIds = array_map('intval', $brandIds);
-	// 		$query->whereIn('brand_id', $brandIds);
-	// 	}
-
-	// 	// ---------------- Sorting -----------------
-
-	// 	if ($sort) {
-	// 		switch ($sort) {
-	// 			case 'price_asc':
-	// 			$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) ASC");
-	// 			break;
-
-	// 			case 'price_desc':
-	// 			$query->orderByRaw("(SELECT sale_price FROM product_suppliers WHERE product_suppliers.product_id = ec_products.id LIMIT 1) DESC");
-	// 			break;
-
-	// 			case 'latest':
-	// 			$query->orderBy('created_at', 'DESC');
-	// 			break;
-
-	// 			case 'rating_desc':
-	// 			$query->withAvg('reviews', 'star')->orderBy('reviews_avg_star', 'DESC');
-	// 			break;
-	// 		}
-	// 	} else {
-	// 		// Default sort: Category-wise (grouped by custom order)
-	// 		if (!empty($categorySortMap)) {
-	// 			// We need to build a CASE statement for the sort map
-	// 			// WHEN category_id = ID THEN INDEX
-	// 			$whens = [];
-	// 			$ids = [];
-	// 			foreach ($categorySortMap as $catId => $index) {
-	// 				$whens[] = "WHEN pc_sort.category_id = $catId THEN $index";
-	// 				$ids[] = $catId;
-	// 			}
-	// 			$whenString = implode(' ', $whens);
-	// 			$idsString = implode(',', $ids);
-
-	// 			$query->leftJoin('product_categories as pc_sort', 'ec_products.id', '=', 'pc_sort.product_id')
-	// 				->select('ec_products.*')
-	// 				// Use MIN to pick the highest priority category (lowest index)
-	// 				->orderByRaw("MIN(CASE $whenString ELSE 999999 END) ASC")
-	// 				->orderBy('brand_id', 'ASC')
-	// 				->orderBy('ec_products.id', 'ASC')
-	// 				->groupBy('ec_products.id');
-	// 		} else {
-	// 			// Fallback to Brand-wise
-	// 			$query->orderBy('brand_id', 'ASC')
-	// 				->orderBy('id', 'ASC');
-	// 		}
-	// 	}
-
-	// 	// ---------------- Pagination -----------------
-
-	// 	$products = $query->paginate($perPage);
-
-	// 	// Get unique colors/categories/brands from the filtered result set
-	// 	$allFilteredIds = $query->clone()->reorder()->groupBy('ec_products.id')->pluck('ec_products.id')->toArray();
-
-	// 	// Get unique brands from the filtered products
-	// 	$brands = \App\Models\Brand::whereIn('id', function($q) use ($allFilteredIds) {
-	// 			$q->from('ec_products')->whereIn('id', $allFilteredIds)->select('brand_id')->distinct();
-	// 		})
-	// 		->select('id', 'name')
-	// 		->orderBy('name', 'ASC')
-	// 		->get()
-	// 		->values();
-
-	// 	// Get unique categories from the filtered products
-	// 	$categories = Category::whereIn('id', function($q) use ($allFilteredIds) {
-	// 			$q->from('product_categories')->whereIn('product_id', $allFilteredIds)->select('category_id')->distinct();
-	// 		})
-	// 		->select('id', 'name')
-	// 		->orderBy('name', 'ASC')
-	// 		->get()
-	// 		->values();
-
-	// 	// ---------------- Transform Response -----------------
-
-	// 	$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
-
-	// 		$imageUrls = is_string($product->images)
-	// 		? json_decode($product->images, true)
-	// 		: (array) $product->images;
-
-	// 		$altTags = is_string($product->alt_tags)
-	// 		? json_decode($product->alt_tags, true)
-	// 		: (array) $product->alt_tags;
-
-	// 		$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
-
-	// 		$totalReviews = $product->reviews->count();
-	// 		$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-
-	// 		$quantity = $product->quantity ?? 0;
-	// 		$unitsSold = $product->units_sold ?? 0;
-	// 		$leftStock = $quantity - $unitsSold;
-
-	// 		// Selling Type Logic
-	// 		$sellingType = null;
-	// 		if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-	// 			$fullValue = $product->sellingUnitAttribute->attribute_value;
-	// 			$unit = $fullValue;
-	// 			if (strpos($fullValue, '/') !== false) {
-	// 				$parts = explode('/', $fullValue);
-	// 				$unit = trim($parts[1]);
-	// 			}
-	// 			$sellingType = [
-	// 				'attribute_value' => $fullValue,
-	// 				'attribute_value_unit' => $unit
-	// 			];
-	// 		}
-
-
-	// 		// Per Unit Price Logic
-	// 		$perUnitPrice = null;
-	// 		$unitsPerCase = null;
-	// 		$packType = null;
-
-	// 		if ($product->productAttributes) {
-	// 			$unitsPerCase = $product->productAttributes
-	// 			->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
-	// 			$packType = $product->productAttributes
-	// 			->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
-	// 		}
-
-	// 		$firstSupplier = $product->productSuppliers->first();
-	// 		$currentPrice = $firstSupplier ? ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : $firstSupplier->price) : 0;
-
-
-	// 		if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-	// 			$unitValue = (float) $unitsPerCase->attribute_value;
-	// 			if ($unitValue > 0) {
-	// 				$calculated = round($currentPrice / $unitValue, 2);
-	// 				$perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
-	// 			}
-	// 		}
-
-	// 		return [
-	// 			'id' => $product->id,
-	// 			'name' => $product->name,
-	// 			'category_url' => $product->category_url(),
-	// 			'parent_category_url' => $product->parent_category_url(),
-	// 			'images' => $imageUrls,          // ✅ Proper array of URLs
-	// 			'alt_tags' => $altTags,
-	// 			'video_path' => $videoPaths,
-	// 			'sku' => $product->sku,
-	// 			'url' => $product->seoUrl->url ?? null,
-	// 			'selling_type' => $sellingType,
-	// 			'per_unit_price' => $perUnitPrice,
-    //             'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
-
-	// 			// Brand info
-	// 			'brand_id' => $product->brand_id ?? null,
-	// 			'brand_name' => $product->brand->name ?? null,
-
-	// 			// Prices
-	// 			'price' => (float)($firstSupplier->price ?? 0),
-	// 			'sale_price' => (float)($firstSupplier->sale_price ?? 0),
-	// 			'original_price' => (float)($firstSupplier->price ?? 0),
-	// 			'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
-	// 			'best_price' => (float)($firstSupplier->price ?? 0),
-
-	// 			// Currency
-	// 			'currency' => $product->currency?->symbol,
-	// 			'currency_title' => $product->currency?->symbol ?? null,
-
-	// 			// Reviews
-	// 			'total_reviews' => $totalReviews,
-	// 			'avg_rating' => $avgRating,
-
-	// 			// Stock
-	// 			'leftStock' => $leftStock,
-
-	// 			// Wishlist
-	// 			'in_wishlist' => in_array($product->id, $wishlistProductIds),
-
-	// 			// Supplier details
-	// 			'vendor_id' => $firstSupplier->vendor_id ?? null,
-	// 			'map' => (float)($firstSupplier->map ?? 0),
-	// 			'inventory' => $firstSupplier->inventory ?? null,
-	// 			'in_stock' => $firstSupplier->in_stock ?? null,
-	// 			'delivery_days' => $firstSupplier->delivery_days ?? null,
-	// 			'return_policy' => $firstSupplier->return_policy ?? null,
-	// 			'free_shipping' => $firstSupplier->free_shipping ?? null,
-	// 			'warranty_information' => $firstSupplier->warranty_information ?? null,
-	// 			'min_quantity' => $firstSupplier->min_quantity ?? 0,
-	// 			'is_fixed' => $firstSupplier->is_fixed ?? 0,
-
-	// 			// Other info
-	// 			'quote_available' => $product->quote_available ?? null,
-	// 			'isRequired' => $product->isRequired,
-	// 		];
-	// 	});
-
-	// 	return response()->json([
-	// 		'success'    => true,
-	// 		'message'    => $id
-	// 		? 'Sale products filtered by category'
-	// 		: 'All sale products fetched successfully',
-
-	// 		// Pagination Meta
-	// 		'pagination' => [
-	// 			'current_page'   => $products->currentPage(),
-	// 			'last_page'      => $products->lastPage(),
-	// 			'per_page'       => $products->perPage(),
-	// 			'total'          => $products->total(),
-	// 			'next_page_url'  => $products->nextPageUrl(),
-	// 			'prev_page_url'  => $products->previousPageUrl(),
-	// 			'has_more'       => $products->hasMorePages(),
-	// 			'links'          => $products->linkCollection(), // Full Laravel links
-	// 		],
-
-	// 		// Actual Product Data
-	// 		'data' => $transformed,
-
-	// 		// Available brands and categories in these results
-	// 		'brands' => $brands,
-	// 		'categories' => $categories,
-	// 	])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-	// }
-      public function saleProductsByCategory(Request $request, $id = null)
+	public function saleProductsByCategory(Request $request, $id = null)
 	{
 		$perPage = $request->get('per_page', 10);
 
@@ -2985,15 +2625,15 @@ class ProductController extends Controller
 		// Base Query → No category filter by default
 		$query = Product::query()
 		->where('status', 'published')
-		->whereHas('productSuppliers', function ($q) {
+		->whereHas('bestSupplier', function ($q) {
 			$q->whereNotNull('sale_price')
-			  ->where('sale_price', '>', 0);
+			->where('sale_price', '>', 0);
 			//   ->where('updated_at', '>=', '2026-02-05');
 		})
 		->with([
 			'reviews:id,product_id,star',
 			'currency',
-			'productSuppliers',
+			'bestSupplier',
 			'seoUrl',
 			'sellingUnitAttribute',
 			'ingredientsAttribute',
@@ -3028,62 +2668,62 @@ class ProductController extends Controller
 			$query->where(function($q) use ($search) {
 				// Smart search with fuzzy matching for typos
 				$q->where('name', 'LIKE', "%$search%")
-					->orWhere('sku', 'LIKE', "%$search%")
+				->orWhere('sku', 'LIKE', "%$search%")
 					// Fuzzy match using SOUNDEX for phonetic similarity
-					->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
+				->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
 					// Search in brand names
-					->orWhereHas('brand', function($brandQ) use ($search) {
-						$brandQ->where('name', 'LIKE', "%$search%")
-							   ->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
-					})
+				->orWhereHas('brand', function($brandQ) use ($search) {
+					$brandQ->where('name', 'LIKE', "%$search%")
+					->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search]);
+				})
 					// Concatenated words search (e.g. "porcelainplate" matches "Porcelain Plate")
-					->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
+				->orWhereRaw("REPLACE(name, ' ', '') LIKE ?", ["%{$search}%"])
 					// Word-by-word AND matching (All words must be present in Name, SKU, or Brand)
-					->orWhere(function($subQ) use ($search) {
-						$words = explode(' ', $search);
-						if (count($words) > 1) {
-							foreach ($words as $word) {
-								if (strlen($word) > 2) {
-									$subQ->where(function($wordQ) use ($word) {
-										$wordQ->where('name', 'LIKE', "%$word%")
-											  ->orWhere('sku', 'LIKE', "%$word%")
-											  ->orWhereHas('brand', function($bq) use ($word) {
-												  $bq->where('name', 'LIKE', "%$word%");
-											  });
+				->orWhere(function($subQ) use ($search) {
+					$words = explode(' ', $search);
+					if (count($words) > 1) {
+						foreach ($words as $word) {
+							if (strlen($word) > 2) {
+								$subQ->where(function($wordQ) use ($word) {
+									$wordQ->where('name', 'LIKE', "%$word%")
+									->orWhere('sku', 'LIKE', "%$word%")
+									->orWhereHas('brand', function($bq) use ($word) {
+										$bq->where('name', 'LIKE', "%$word%");
 									});
-								}
+								});
 							}
-						} else {
+						}
+					} else {
 							$subQ->whereRaw('0 = 1'); // Only 1 word, handled by main logic
 						}
 					});
 
 					// Consonant-based fuzzy search for typos (e.g. "ballini" matches "Bellini")
 					// We only do this if the search term is reasonable length to avoid massive matches
-					if (strlen($search) >= 4) {
+				if (strlen($search) >= 4) {
 						// Create a pattern where vowels are wildcards
 						// e.g. "ballini" -> "%b%l%l%n%"
-						$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
+					$consonants = preg_replace('/[aeiouyAEIOUY\s]+/', '%', $search);
 						// Ensure we don't have multiple % side by side if possible (preg_replace handles it but good to be sure)
-						$fuzzyPattern = '%' . $consonants . '%';
+					$fuzzyPattern = '%' . $consonants . '%';
 
 						// Only apply if we have enough "skeleton" to match on
-						if (strlen($consonants) >= 3) {
-							$q->orWhere('name', 'LIKE', $fuzzyPattern);
-						}
+					if (strlen($consonants) >= 3) {
+						$q->orWhere('name', 'LIKE', $fuzzyPattern);
 					}
+				}
 			});
 		}
 
 
 		if ($minPrice) {
-			$query->whereHas('productSuppliers', function ($q) use ($minPrice) {
+			$query->whereHas('bestSupplier', function ($q) use ($minPrice) {
 				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) >= ?', [$minPrice]);
 			});
 		}
 
 		if ($maxPrice) {
-			$query->whereHas('productSuppliers', function ($q) use ($maxPrice) {
+			$query->whereHas('bestSupplier', function ($q) use ($maxPrice) {
 				$q->whereRaw('(CASE WHEN sale_price > 0 THEN sale_price ELSE price END) <= ?', [$maxPrice]);
 			});
 		}
@@ -3095,7 +2735,7 @@ class ProductController extends Controller
 		}
 
 		if ($onlyInStock == 1) {
-			$query->whereHas('productSuppliers', function ($q) {
+			$query->whereHas('bestSupplier', function ($q) {
 				$q->where('inventory', '>', 0)->where('in_stock', 1);
 			});
 		}
@@ -3128,10 +2768,10 @@ class ProductController extends Controller
 				break;
 			}
 		} else {
-             // Default sort: Brand-wise (products grouped by brand)
-             $query->orderBy('brand_id', 'ASC')
-                   ->orderBy('id', 'ASC');
-        }
+			 // Default sort: Brand-wise (products grouped by brand)
+			$query->orderBy('brand_id', 'ASC')
+			->orderBy('id', 'ASC');
+		}
 
 		// ---------------- Pagination -----------------
 
@@ -3139,23 +2779,23 @@ class ProductController extends Controller
 
 		// Get unique brands from the filtered products
 		$brandsInResults = $query->clone()
-			->reorder()
-			->select('brand_id')
-			->distinct()
-			->whereNotNull('brand_id')
-			->pluck('brand_id')
-			->toArray();
+		->reorder()
+		->select('brand_id')
+		->distinct()
+		->whereNotNull('brand_id')
+		->pluck('brand_id')
+		->toArray();
 
 		$brands = \App\Models\Brand::whereIn('id', $brandsInResults)
-			->select('id', 'name')
-			->orderBy('name', 'ASC')
-			->get()
-			->map(function($brand) {
-				return [
-					'id' => $brand->id,
-					'name' => $brand->name,
-				];
-			});
+		->select('id', 'name')
+		->orderBy('name', 'ASC')
+		->get()
+		->map(function($brand) {
+			return [
+				'id' => $brand->id,
+				'name' => $brand->name,
+			];
+		});
 
 		// ---------------- Transform Response -----------------
 
@@ -3206,8 +2846,19 @@ class ProductController extends Controller
 				->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
 			}
 
-			$firstSupplier = $product->productSuppliers->first();
-			$currentPrice = $firstSupplier ? ($firstSupplier->sale_price > 0 ? $firstSupplier->sale_price : $firstSupplier->price) : 0;
+			$bestSupplier = $product->bestSupplier()
+			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
+				'vendor.country:id,name',
+				'vendor.city:id,name',
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
+			])
+			->first();
+			$currentPrice = $bestSupplier ? ($bestSupplier->sale_price > 0 ? $bestSupplier->sale_price : $bestSupplier->price) : 0;
 
 
 			if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
@@ -3230,18 +2881,18 @@ class ProductController extends Controller
 				'url' => $product->seoUrl->url ?? null,
 				'selling_type' => $sellingType,
 				'per_unit_price' => $perUnitPrice,
-                'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
+				'discount_percentage' => ($bestSupplier && $bestSupplier->price > 0) ? round((($bestSupplier->price - $bestSupplier->sale_price) / $bestSupplier->price) * 100, 2) : 0,
 
 				// Brand info
 				'brand_id' => $product->brand_id ?? null,
 				'brand_name' => $product->brand->name ?? null,
 
 				// Prices
-				'price' => (float)($firstSupplier->price ?? 0),
-				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'original_price' => (float)($firstSupplier->price ?? 0),
-				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'best_price' => (float)($firstSupplier->price ?? 0),
+				'price' => (float)($bestSupplier->price ?? 0),
+				'sale_price' => (float)($bestSupplier->sale_price ?? 0),
+				'original_price' => (float)($bestSupplier->price ?? 0),
+				'front_sale_price' => (float)($bestSupplier->sale_price ?? 0),
+				'best_price' => (float)($bestSupplier->price ?? 0),
 
 				// Currency
 				'currency' => $product->currency?->symbol,
@@ -3258,18 +2909,20 @@ class ProductController extends Controller
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
 				// Supplier details
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float)($firstSupplier->map ?? 0),
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float)($bestSupplier->map ?? 0),
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 
 				// Other info
 				'quote_available' => $product->quote_available ?? null,
@@ -3277,7 +2930,7 @@ class ProductController extends Controller
 			];
 		});
 
-		return response()->json([
+		return response()->json([//
 			'success'    => true,
 			'message'    => $id
 			? 'Sale products filtered by category'
@@ -3423,9 +3076,9 @@ class ProductController extends Controller
 				$whens[] = 'WHEN ' . (int)$catId . ' THEN ' . (int)$idx;
 			}
 			$categorySortExpr =
-				'(SELECT MIN(CASE category_id ' . implode(' ', $whens) . ' ELSE 999 END)
-				FROM product_categories
-				WHERE product_categories.product_id = ec_products.id)';
+			'(SELECT MIN(CASE category_id ' . implode(' ', $whens) . ' ELSE 999 END)
+			FROM product_categories
+			WHERE product_categories.product_id = ec_products.id)';
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────
@@ -3433,37 +3086,37 @@ class ProductController extends Controller
 		// ─────────────────────────────────────────────────────────────────────────
 		$userId = Auth::id();
 		$wishlistProductIds = $userId
-			? DB::table('ec_wish_lists')
-				->where('customer_id', $userId)
-				->pluck('product_id')
-				->map(fn($id) => (int) $id)
-				->toArray()
-			: session()->get('guest_wishlist', []);
+		? DB::table('ec_wish_lists')
+		->where('customer_id', $userId)
+		->pluck('product_id')
+		->map(fn($id) => (int) $id)
+		->toArray()
+		: session()->get('guest_wishlist', []);
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// 4. Base query
 		// ─────────────────────────────────────────────────────────────────────────
 		$query = Product::query()
-			->where('ec_products.status', 'published')
-			->whereHas('productSuppliers', function ($q) {
-				$q->where('vendor_id', 99)
-				->whereNotNull('sale_price')
-				->where('sale_price', '>', 0);
-			})
-			->with([
-				'reviews:id,product_id,star',
-				'currency',
-				'productSuppliers' => fn($q) => $q->where('vendor_id', 99),
-				'seoUrl',
-				'sellingUnitAttribute',
-				'ingredientsAttribute',
-				'brand:id,name',
-				'productAttributes' => function ($q) {
-					$q->whereHas('attributeDetails', fn($q2) =>
-						$q2->whereIn('name', ['Units per Case', 'Pack Type'])
-					);
-				},
-			]);
+		->where('ec_products.status', 'published')
+		->whereHas('productSuppliers', function ($q) {
+			$q->where('vendor_id', 99)
+			->whereNotNull('sale_price')
+			->where('sale_price', '>', 0);
+		})
+		->with([
+			'reviews:id,product_id,star',
+			'currency',
+			'productSuppliers' => fn($q) => $q->where('vendor_id', 99),
+			'seoUrl',
+			'sellingUnitAttribute',
+			'ingredientsAttribute',
+			'brand:id,name',
+			'productAttributes' => function ($q) {
+				$q->whereHas('attributeDetails', fn($q2) =>
+					$q2->whereIn('name', ['Units per Case', 'Pack Type'])
+				);
+			},
+		]);
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// 5. Filters
@@ -3499,7 +3152,7 @@ class ProductController extends Controller
 				->orWhereRaw('SOUNDEX(ec_products.name) = SOUNDEX(?)', [$search])
 				->orWhereHas('brand', fn($bq) =>
 					$bq->where('name', 'LIKE', "%{$search}%")
-						->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
+					->orWhereRaw('SOUNDEX(name) = SOUNDEX(?)', [$search])
 				)
 				->orWhereRaw("REPLACE(ec_products.name, ' ', '') LIKE ?", ["%{$search}%"]);
 
@@ -3563,27 +3216,27 @@ class ProductController extends Controller
 		if ($sort) {
 			switch ($sort) {
 				case 'price_asc':
-					$query->orderByRaw("(SELECT sale_price FROM product_suppliers
-						WHERE product_suppliers.product_id = ec_products.id
-						AND product_suppliers.vendor_id = 99 LIMIT 1) ASC");
-					break;
+				$query->orderByRaw("(SELECT sale_price FROM product_suppliers
+					WHERE product_suppliers.product_id = ec_products.id
+					AND product_suppliers.vendor_id = 99 LIMIT 1) ASC");
+				break;
 				case 'price_desc':
-					$query->orderByRaw("(SELECT sale_price FROM product_suppliers
-						WHERE product_suppliers.product_id = ec_products.id
-						AND product_suppliers.vendor_id = 99 LIMIT 1) DESC");
-					break;
+				$query->orderByRaw("(SELECT sale_price FROM product_suppliers
+					WHERE product_suppliers.product_id = ec_products.id
+					AND product_suppliers.vendor_id = 99 LIMIT 1) DESC");
+				break;
 				case 'latest':
-					$query->orderBy('ec_products.created_at', 'DESC');
-					break;
+				$query->orderBy('ec_products.created_at', 'DESC');
+				break;
 				case 'rating_desc':
-					$query->orderByRaw("(SELECT AVG(star) FROM ec_reviews
-						WHERE ec_reviews.product_id = ec_products.id) DESC");
-					break;
+				$query->orderByRaw("(SELECT AVG(star) FROM ec_reviews
+					WHERE ec_reviews.product_id = ec_products.id) DESC");
+				break;
 			}
 		} else {
 			$query->orderByRaw("{$categorySortExpr} ASC")
-				->orderBy('ec_products.brand_id', 'ASC')
-				->orderBy('ec_products.id', 'ASC');
+			->orderBy('ec_products.brand_id', 'ASC')
+			->orderBy('ec_products.id', 'ASC');
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────
@@ -3603,30 +3256,30 @@ class ProductController extends Controller
 		// ─────────────────────────────────────────────────────────────────────────
 		// 8. Paginate
 		// ─────────────────────────────────────────────────────────────────────────
-		$products = $query->paginate($perPage);
+			$products = $query->paginate($perPage);
 
 		// ─────────────────────────────────────────────────────────────────────────
 			// 9. Sidebar aggregates
 		// ─────────────────────────────────────────────────────────────────────────
-		$brands = \App\Models\Brand::whereIn('id', function ($q) use ($allFilteredIds) {
-			$q->from('ec_products')
-			->whereIn('id', $allFilteredIds)
-			->select('brand_id')
-			->distinct();
-		})->select('id', 'name')->orderBy('name')->get()->values();
+			$brands = \App\Models\Brand::whereIn('id', function ($q) use ($allFilteredIds) {
+				$q->from('ec_products')
+				->whereIn('id', $allFilteredIds)
+				->select('brand_id')
+				->distinct();
+			})->select('id', 'name')->orderBy('name')->get()->values();
 
 		// ✅ Build ONLY the top-level 16 category IDs (not their children)
-		$topLevelCategoryIds = [];
-		foreach ($categoryOrderNames as $priority => $name) {
-			$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
-			if ($cat) {
-				$topLevelCategoryIds[$cat->id] = $priority;
+			$topLevelCategoryIds = [];
+			foreach ($categoryOrderNames as $priority => $name) {
+				$cat = Category::where('name', 'LIKE', '%' . $name . '%')->first();
+				if ($cat) {
+					$topLevelCategoryIds[$cat->id] = $priority;
+				}
 			}
-		}
 
 		// Only show these exact 16 categories in the sidebar filter
 		// and only if at least one filtered product belongs to them OR their children
-		$productCategoryIds = DB::table('product_categories')
+			$productCategoryIds = DB::table('product_categories')
 			->whereIn('product_id', $allFilteredIds)
 			->whereIn('category_id', array_keys($categorySortMap)) // children + parents
 			->pluck('category_id')
@@ -3634,21 +3287,21 @@ class ProductController extends Controller
 			->toArray();
 
 		// Map child category IDs back to their top-level parent priority
-		$matchedTopLevelIds = [];
-		foreach ($productCategoryIds as $catId) {
-			if (isset($categorySortMap[$catId])) {
-				$priority = $categorySortMap[$catId];
+			$matchedTopLevelIds = [];
+			foreach ($productCategoryIds as $catId) {
+				if (isset($categorySortMap[$catId])) {
+					$priority = $categorySortMap[$catId];
 				// Find the top-level category that has this priority
-				foreach ($topLevelCategoryIds as $topId => $topPriority) {
-					if ($topPriority === $priority) {
-						$matchedTopLevelIds[$topId] = $priority;
-						break;
+					foreach ($topLevelCategoryIds as $topId => $topPriority) {
+						if ($topPriority === $priority) {
+							$matchedTopLevelIds[$topId] = $priority;
+							break;
+						}
 					}
 				}
 			}
-		}
 
-		$categories = Category::whereIn('id', array_keys($matchedTopLevelIds))
+			$categories = Category::whereIn('id', array_keys($matchedTopLevelIds))
 			->select('id', 'name')
 			->get()
 			->sortBy(fn($cat) => $matchedTopLevelIds[$cat->id] ?? 999)
@@ -3657,114 +3310,110 @@ class ProductController extends Controller
 		// ─────────────────────────────────────────────────────────────────────────
 		// 10. Transform
 		// ─────────────────────────────────────────────────────────────────────────
-		$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
+			$transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
 
-			$imageUrls  = is_string($product->images)
+				$imageUrls  = is_string($product->images)
 				? json_decode($product->images, true) : (array) $product->images;
-			$altTags    = is_string($product->alt_tags)
+				$altTags    = is_string($product->alt_tags)
 				? json_decode($product->alt_tags, true) : (array) $product->alt_tags;
-			$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
+				$videoPaths = collect(json_decode($product->video_path ?? '[]', true));
 
-			$totalReviews = $product->reviews->count();
-			$avgRating    = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-			$leftStock    = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
+				$totalReviews = $product->reviews->count();
+				$avgRating    = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+				$leftStock    = ($product->quantity ?? 0) - ($product->units_sold ?? 0);
 
-			$sellingType = null;
-			if ($product->sellingUnitAttribute?->attribute_value) {
-				$full = $product->sellingUnitAttribute->attribute_value;
-				$unit = strpos($full, '/') !== false ? trim(explode('/', $full)[1]) : $full;
-				$sellingType = ['attribute_value' => $full, 'attribute_value_unit' => $unit];
-			}
+				$sellingType = null;
+				if ($product->sellingUnitAttribute?->attribute_value) {
+					$full = $product->sellingUnitAttribute->attribute_value;
+					$unit = strpos($full, '/') !== false ? trim(explode('/', $full)[1]) : $full;
+					$sellingType = ['attribute_value' => $full, 'attribute_value_unit' => $unit];
+				}
 
-			$unitsPerCase = $product->productAttributes
+				$unitsPerCase = $product->productAttributes
 				?->first(fn($a) => $a->attributeDetails?->name === 'Units per Case');
-			$packType     = $product->productAttributes
+				$packType     = $product->productAttributes
 				?->first(fn($a) => $a->attributeDetails?->name === 'Pack Type');
 
-			$supplier     = $product->productSuppliers->first();
-			$currentPrice = $supplier
+				$supplier     = $product->productSuppliers->first();
+				$currentPrice = $supplier
 				? ($supplier->sale_price > 0 ? $supplier->sale_price : $supplier->price)
 				: 0;
 
-			$perUnitPrice = null;
-			if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-				$unitValue = (float) $unitsPerCase->attribute_value;
-				if ($unitValue > 0) {
-					$perUnitPrice = round($currentPrice / $unitValue, 2) . '/' . ($packType?->attribute_value ?? '');
+				$perUnitPrice = null;
+				if ($currentPrice > 0 && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+					$unitValue = (float) $unitsPerCase->attribute_value;
+					if ($unitValue > 0) {
+						$perUnitPrice = round($currentPrice / $unitValue, 2) . '/' . ($packType?->attribute_value ?? '');
+					}
 				}
-			}
 
-			$discountPercentage = ($supplier && $supplier->price > 0)
+				$discountPercentage = ($supplier && $supplier->price > 0)
 				? round((($supplier->price - $supplier->sale_price) / $supplier->price) * 100, 2)
 				: 0;
 
-			return [
-				'id'                   => $product->id,
-				'name'                 => $product->name,
-				'category_url'         => $product->category_url(),
-				'parent_category_url'  => $product->parent_category_url(),
-				'images'               => $imageUrls,
-				'alt_tags'             => $altTags,
-				'video_path'           => $videoPaths,
-				'sku'                  => $product->sku,
-				'url'                  => $product->seoUrl->url ?? null,
-				'selling_type'         => $sellingType,
-				'per_unit_price'       => $perUnitPrice,
-				'discount_percentage'  => $discountPercentage,
-				'brand_id'             => $product->brand_id ?? null,
-				'brand_name'           => $product->brand->name ?? null,
-				'price'                => (float) ($supplier->price ?? 0),
-				'sale_price'           => (float) ($supplier->sale_price ?? 0),
-				'original_price'       => (float) ($supplier->price ?? 0),
-				'front_sale_price'     => (float) ($supplier->sale_price ?? 0),
-				'best_price'           => (float) ($supplier->sale_price > 0 ? $supplier->sale_price : ($supplier->price ?? 0)),
-				'currency'             => $product->currency?->symbol,
-				'currency_title'       => $product->currency?->symbol ?? null,
-				'total_reviews'        => $totalReviews,
-				'avg_rating'           => $avgRating,
-				'leftStock'            => $leftStock,
-				'in_wishlist'          => in_array($product->id, $wishlistProductIds),
-				'vendor_id'            => $supplier->vendor_id ?? null,
-				'map'                  => (float) ($supplier->map ?? 0),
-				'inventory'            => $supplier->inventory ?? null,
-				'in_stock'             => $supplier->in_stock ?? null,
-				'delivery_days'        => $supplier->delivery_days ?? null,
-				'return_policy'        => $supplier->return_policy ?? null,
-				'free_shipping'        => $supplier->free_shipping ?? null,
-				'warranty_information' => $supplier->warranty_information ?? null,
-				'min_quantity'         => $supplier->min_quantity ?? 0,
-				'is_fixed'             => $supplier->is_fixed ?? 0,
-				'quote_available'      => $product->quote_available ?? null,
-				'isRequired'           => $product->isRequired,
-			];
-		});
+				return [
+					'id'                   => $product->id,
+					'name'                 => $product->name,
+					'category_url'         => $product->category_url(),
+					'parent_category_url'  => $product->parent_category_url(),
+					'images'               => $imageUrls,
+					'alt_tags'             => $altTags,
+					'video_path'           => $videoPaths,
+					'sku'                  => $product->sku,
+					'url'                  => $product->seoUrl->url ?? null,
+					'selling_type'         => $sellingType,
+					'per_unit_price'       => $perUnitPrice,
+					'discount_percentage'  => $discountPercentage,
+					'brand_id'             => $product->brand_id ?? null,
+					'brand_name'           => $product->brand->name ?? null,
+					'price'                => (float) ($supplier->price ?? 0),
+					'sale_price'           => (float) ($supplier->sale_price ?? 0),
+					'original_price'       => (float) ($supplier->price ?? 0),
+					'front_sale_price'     => (float) ($supplier->sale_price ?? 0),
+					'best_price'           => (float) ($supplier->sale_price > 0 ? $supplier->sale_price : ($supplier->price ?? 0)),
+					'currency'             => $product->currency?->symbol,
+					'currency_title'       => $product->currency?->symbol ?? null,
+					'total_reviews'        => $totalReviews,
+					'avg_rating'           => $avgRating,
+					'leftStock'            => $leftStock,
+					'in_wishlist'          => in_array($product->id, $wishlistProductIds),
+					'vendor_id'            => $supplier->vendor_id ?? null,
+					'map'                  => (float) ($supplier->map ?? 0),
+					'inventory'            => $supplier->inventory ?? null,
+					'in_stock'             => $supplier->in_stock ?? null,
+					'delivery_days'        => $supplier->delivery_days ?? null,
+					'return_policy'        => $supplier->return_policy ?? null,
+					'free_shipping'        => $supplier->free_shipping ?? null,
+					'warranty_information' => $supplier->warranty_information ?? null,
+					'min_quantity'         => $supplier->min_quantity ?? 0,
+					'is_fixed'             => $supplier->is_fixed ?? 0,
+					'quote_available'      => $product->quote_available ?? null,
+					'isRequired'           => $product->isRequired,
+				];
+			});
 
-		return response()->json([
-			'success'    => true,
-			'message'    => $categoryId
+			return response()->json([
+				'success'    => true,
+				'message'    => $categoryId
 				? 'Sale products filtered by category'
 				: 'All sale products fetched successfully',
-			'pagination' => [
-				'current_page'  => $products->currentPage(),
-				'last_page'     => $products->lastPage(),
-				'per_page'      => $products->perPage(),
-				'total'         => $products->total(),
-				'next_page_url' => $products->nextPageUrl(),
-				'prev_page_url' => $products->previousPageUrl(),
-				'has_more'      => $products->hasMorePages(),
-				'links'         => $products->linkCollection(),
-			],
-			'data'       => $transformed,
-			'brands'     => $brands,
-			'categories' => $categories,
-		])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-	}
+				'pagination' => [
+					'current_page'  => $products->currentPage(),
+					'last_page'     => $products->lastPage(),
+					'per_page'      => $products->perPage(),
+					'total'         => $products->total(),
+					'next_page_url' => $products->nextPageUrl(),
+					'prev_page_url' => $products->previousPageUrl(),
+					'has_more'      => $products->hasMorePages(),
+					'links'         => $products->linkCollection(),
+				],
+				'data'       => $transformed,
+				'brands'     => $brands,
+				'categories' => $categories,
+			])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+		}
 
-
-
-
-
-		/**
+	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/ec-products",
 	 *     summary="Get specific EC products with filters and sorting",
@@ -3818,7 +3467,7 @@ class ProductController extends Controller
 	 */
 
 
-		public function getEcProducts(Request $request)
+	public function getEcProducts(Request $request)
 	{
 		$targetSkus = [
 			'QJH-X15D',
@@ -3846,7 +3495,7 @@ class ProductController extends Controller
 		$query = Product::with([
 			'categories.seoUrl',
 			'brand.seoUrl',
-			'productSuppliers',
+			'bestSupplier',
 			'seoUrl',
 			'accessories.items',
 			'productVariants',
@@ -3862,7 +3511,7 @@ class ProductController extends Controller
 			$search = $request->input('search');
 			$query->where(function ($q) use ($search) {
 				$q->where('name', 'like', '%' . $search . '%')
-				  ->orWhere('sku', 'like', '%' . $search . '%');
+				->orWhere('sku', 'like', '%' . $search . '%');
 			});
 		}
 
@@ -3889,9 +3538,9 @@ class ProductController extends Controller
 				$query->orderBy('created_at', 'desc');
 			}
 		} else {
-             // Default sort to keep order of SKUs if possible, or just standard sort
-              $query->orderByRaw('FIELD(sku, "' . implode('","', $targetSkus) . '")');
-        }
+			 // Default sort to keep order of SKUs if possible, or just standard sort
+			$query->orderByRaw('FIELD(sku, "' . implode('","', $targetSkus) . '")');
+		}
 
 		// Pagination
 		$perPage = $request->input('per_page', 20);
@@ -3900,7 +3549,7 @@ class ProductController extends Controller
 		// Transform Collection
 		$products->getCollection()->transform(function ($product) {
 
-            // Common logic (reused from existing controller logic essentially)
+			// Common logic (reused from existing controller logic essentially)
 			$product->images = collect(json_decode($product->images, true));
 			$imageUrls = $product->images->toArray();
 
@@ -3911,62 +3560,73 @@ class ProductController extends Controller
 			$videoPaths = $product->video_path->toArray();
 
 
-            // Selling Type / Unit
+			// Selling Type / Unit
 			$sellingType = null;
 			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                // Simplified logic from existing code
+				// Simplified logic from existing code
 				$fullValue = $product->sellingUnitAttribute->attribute_value;
-                 if (strpos($fullValue, '/') !== false) {
-                     $parts = explode('/', $fullValue);
-                     $sellingType = trim($parts[1]);
-                 } else {
-                     $sellingType = $fullValue;
-                 }
+				if (strpos($fullValue, '/') !== false) {
+					$parts = explode('/', $fullValue);
+					$sellingType = trim($parts[1]);
+				} else {
+					$sellingType = $fullValue;
+				}
 			}
 
-            // Per Unit Price
-            $unitsPerCase = null;
-            $packType = null;
-            if ($product->productAttributes) {
-                foreach ($product->productAttributes as $attr) {
-                    if ($attr->attributeDetails && $attr->attributeDetails->name === 'Units per Case') {
-                        $unitsPerCase = $attr;
-                    }
-                    if ($attr->attributeDetails && $attr->attributeDetails->name === 'Pack Type') {
-                        $packType = $attr;
-                    }
-                }
-            }
-            $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-            $perUnitPrice = null;
-            if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-                $unitValue = (float) $unitsPerCase->attribute_value;
-                if ($unitValue > 0) {
-                    $calculated = round($basePrice / $unitValue, 2);
-                    $perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
-                }
-            }
+			// Per Unit Price
+			$unitsPerCase = null;
+			$packType = null;
+			if ($product->productAttributes) {
+				foreach ($product->productAttributes as $attr) {
+					if ($attr->attributeDetails && $attr->attributeDetails->name === 'Units per Case') {
+						$unitsPerCase = $attr;
+					}
+					if ($attr->attributeDetails && $attr->attributeDetails->name === 'Pack Type') {
+						$packType = $attr;
+					}
+				}
+			}
+			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+			$perUnitPrice = null;
+			if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+				$unitValue = (float) $unitsPerCase->attribute_value;
+				if ($unitValue > 0) {
+					$calculated = round($basePrice / $unitValue, 2);
+					$perUnitPrice = $calculated . '/' . ($packType?->attribute_value ?? '');
+				}
+			}
 
 
 			// Supplier stuff
-			$firstSupplier = $product->productSuppliers->first();
+			$bestSupplier = $product->bestSupplier()
+			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
+				'vendor.country:id,name',
+				'vendor.city:id,name',
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
+			])
+			->first();
 
-            // Wishlist (Guest or Auth)
-            $userId = Auth::id();
-            $wishlistProductIds = [];
-             if ($userId) {
-                $wishlistProductIds = DB::table('ec_wish_lists')
-                    ->where('customer_id', $userId)
-                    ->pluck('product_id')->toArray();
-            } else {
-                 $wishlistProductIds = session()->get('guest_wishlist', []);
-            }
+			// Wishlist (Guest or Auth)
+			$userId = Auth::id();
+			$wishlistProductIds = [];
+			if ($userId) {
+				$wishlistProductIds = DB::table('ec_wish_lists')
+				->where('customer_id', $userId)
+				->pluck('product_id')->toArray();
+			} else {
+				$wishlistProductIds = session()->get('guest_wishlist', []);
+			}
 
 
-            // Calculations
+			// Calculations
 			$totalReviews = $product->reviews->count();
 			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-            $leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? null);
+			$leftStock = ($product->quantity ?? 0) - ($product->units_sold ?? null);
 
 			return [
 				'id' => $product->id,
@@ -3987,18 +3647,18 @@ class ProductController extends Controller
 				'url' => $product->seoUrl->url ?? null,
 				'selling_type' => $sellingType,
 				'per_unit_price' => $perUnitPrice,
-				'discount_percentage' => ($firstSupplier && $firstSupplier->price > 0) ? round((($firstSupplier->price - $firstSupplier->sale_price) / $firstSupplier->price) * 100, 2) : 0,
+				'discount_percentage' => ($bestSupplier && $bestSupplier->price > 0) ? round((($bestSupplier->price - $bestSupplier->sale_price) / $bestSupplier->price) * 100, 2) : 0,
 
 				// Brand info
 				'brand_id' => $product->brand_id ?? null,
 				'brand_name' => $product->brand->name ?? null,
 
 				// Prices
-				'price' => (float)($firstSupplier->price ?? 0),
-				'sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'original_price' => (float)($firstSupplier->price ?? 0),
-				'front_sale_price' => (float)($firstSupplier->sale_price ?? 0),
-				'best_price' => (float)($firstSupplier->price ?? 0),
+				'price' => (float)($bestSupplier->price ?? 0),
+				'sale_price' => (float)($bestSupplier->sale_price ?? 0),
+				'original_price' => (float)($bestSupplier->price ?? 0),
+				'front_sale_price' => (float)($bestSupplier->sale_price ?? 0),
+				'best_price' => (float)($bestSupplier->price ?? 0),
 
 				// Currency
 				'currency' => $product->currency?->symbol,
@@ -4015,18 +3675,20 @@ class ProductController extends Controller
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 
 				// Supplier details
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float)($firstSupplier->map ?? 0),
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float)($bestSupplier->map ?? 0),
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 
 				// Other info
 				'quote_available' => $product->quote_available ?? null,
@@ -4034,6 +3696,6 @@ class ProductController extends Controller
 			];
 		});
 
-		return response()->json($products);
+		return response()->json($products);//
 	}
 }

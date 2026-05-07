@@ -95,7 +95,7 @@ class CompareProductController extends Controller
 					'productAttributes.attributeDetails',
 					'productAttributes.measurementUnit',
 					'reviews:id,product_id,star',
-					'productSuppliers',
+					'bestSupplier',
 				])
 				->where('id', $product->product_alternate_id ?? $mainProductId)
 				->select([
@@ -113,11 +113,16 @@ class CompareProductController extends Controller
 					return null;
 				}
 
-				$firstSupplier = $products->productSuppliers()
+				$bestSupplier = $product->bestSupplier()
 				->with([
+					'creator:id,first_name,last_name',
+					'vendor:id,name,country_id,city_id,address,zipcode',
 					'vendor.country:id,name',
 					'vendor.city:id,name',
-					'inventoryUpdator:id,first_name,last_name'
+					'latestPriceTracking',
+					'latestPriceTracking.creator:id,first_name,last_name',
+					'latestInventoryTracking',
+					'latestInventoryTracking.creator:id,first_name,last_name',
 				])
 				->first();
 
@@ -141,33 +146,35 @@ class CompareProductController extends Controller
 					? $products->images
 					: (is_array($decoded = json_decode($products->images, true)) ? $decoded : null),
 
-					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+					'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-					'vendor_address' => $firstSupplier->vendor->address ?? null,
-					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+					'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+					'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+					'vendor_address' => $bestSupplier->vendor->address ?? null,
+					'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-					'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-					'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-					'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-					'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-					'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+					'price' => $bestSupplier ? (float) $bestSupplier->price : null,
+					'sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : null,
+					'original_price' => $bestSupplier ? (float) $bestSupplier->price : null,
+					'front_sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : null,
+					'best_price' => $bestSupplier ? (float) $bestSupplier->price : null,
 					'per_unit_price' => $products->per_unit_price ?? null,
-					'vendor_id' => $firstSupplier->vendor_id ?? null,
-					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-					'inventory' => $firstSupplier->inventory ?? null,
-					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-					'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-					'in_stock' => $firstSupplier->in_stock ?? null,
-					'delivery_days' => $firstSupplier->delivery_days ?? null,
-					'return_policy' => $firstSupplier->return_policy ?? null,
-					'free_shipping' => $firstSupplier->free_shipping ?? null,
+					'vendor_id' => $bestSupplier->vendor_id ?? null,
+					'map' => $bestSupplier ? (float) $bestSupplier->map : null,
+					'inventory' => $bestSupplier->inventory ?? null,
+					'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+					'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+					'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+					'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+					'in_stock' => $bestSupplier->in_stock ?? null,
+					'delivery_days' => $bestSupplier->delivery_days ?? null,
+					'return_policy' => $bestSupplier->return_policy ?? null,
+					'free_shipping' => $bestSupplier->free_shipping ?? null,
 					'totalReviews' => $products->reviews?->count() ?? 0,
 					'avgRating' => $products->reviews?->count() > 0 ? $products->reviews->avg('star') : null,
-					'warranty_information' => $firstSupplier->warranty_information ?? null,
-					'min_quantity' => $firstSupplier->min_quantity ?? 0,
-					'is_fixed' => $firstSupplier->is_fixed ?? 0,
+					'warranty_information' => $bestSupplier->warranty_information ?? null,
+					'min_quantity' => $bestSupplier->min_quantity ?? 0,
+					'is_fixed' => $bestSupplier->is_fixed ?? 0,
 					'quote_available' => $product->quote_available ?? null,
 					'isRequired' => $product->isRequired,
 					'alt_id' => $product->id,
@@ -188,7 +195,7 @@ class CompareProductController extends Controller
 				];
 			})->filter();
 
-			return response()->json([
+			return response()->json([//
 				'success' => true,
 				'message' => 'Product & alternates fetched successfully',
 				'data' => $formattedProducts->values(),

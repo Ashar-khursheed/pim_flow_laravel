@@ -125,11 +125,16 @@ class SearchController extends Controller
 
 		// Helper function for consistent product mapping
 		$mapProduct = function ($product) {
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -141,34 +146,36 @@ class SearchController extends Controller
 				'url' => $product->seoUrl->url ?? null,
 				'sku' => $product->sku,
 				'images' => json_decode($product->images) ?? [],
-				'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-				'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
-				'vendor_id' => $firstSupplier?->vendor_id,
+				'original_price' => $bestSupplier ? (float) $bestSupplier->price : null,
+				'front_sale_price' => $bestSupplier ? (float) ($bestSupplier->sale_price ?? $bestSupplier->price) : null,
+				'vendor_id' => $bestSupplier?->vendor_id,
 				'currency_title' => $product->currency->symbol ?? null,
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-				'sale_price' => $firstSupplier->sale_price ?? null,
-				'map' => $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
+				'price' => $bestSupplier ? (float) $bestSupplier->price : null,
+				'sale_price' => $bestSupplier->sale_price ?? null,
+				'map' => $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
 				'warranty_information' => !empty($product->warrantyAttribute?->attribute_value)
 				? $product->warrantyAttribute->attribute_value
-				: ($firstSupplier->warranty_information ?? null),
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
+				: ($bestSupplier->warranty_information ?? null),
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'brand' => $product->brand ? [
 					'id' => $product->brand->id,
 					'name' => $product->brand->name,
@@ -272,7 +279,7 @@ class SearchController extends Controller
 		$searchTerms = $generateSearchTerms($query);
 
 		// Super fast product search with database-level fuzzy matching
-		$products = Product::with(['slug', 'brand', 'currency', 'productSuppliers'])
+		$products = Product::with(['slug', 'brand', 'currency', 'bestSupplier'])
 		->where('status', 'published')
 		->where(function ($q) use ($query, $searchTerms) {
 				// Exact matches first (highest priority)
@@ -322,7 +329,7 @@ class SearchController extends Controller
 			'slug',
 			'parent.slug',
 			'parent.parent.slug',
-			'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'productSuppliers' , 'seoUrl'])
+			'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'bestSupplier' , 'seoUrl'])
 		])
 		->where('status', 'published')
 		->whereHas('products', fn($q) => $q->where('status', 'published'))
@@ -587,11 +594,16 @@ class SearchController extends Controller
 
 		// Map function for product formatting
 		$mapProduct = function ($product) {
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -603,32 +615,34 @@ class SearchController extends Controller
 				'parent_category_url' => $product->parent_category_url(),
 				'url' => $product->seoUrl->url ?? null,
 				'images' => json_decode($product->images) ?? [],
-				'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-				'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->price ?? $firstSupplier->price) : null,
-				'vendor_id' => $firstSupplier?->vendor_id,
+				'original_price' => $bestSupplier ? (float) $bestSupplier->price : null,
+				'front_sale_price' => $bestSupplier ? (float) ($bestSupplier->price ?? $bestSupplier->price) : null,
+				'vendor_id' => $bestSupplier?->vendor_id,
 				'currency_title' => $product->currency->symbol ?? null,
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => $firstSupplier ? (float) ($firstSupplier->price ?? $firstSupplier->price) : null,
-				'sale_price' =>  $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->sale_price) : null,
-				'map' => $firstSupplier->map ?? null,
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
+				'price' => $bestSupplier ? (float) ($bestSupplier->price ?? $bestSupplier->price) : null,
+				'sale_price' =>  $bestSupplier ? (float) ($bestSupplier->sale_price ?? $bestSupplier->sale_price) : null,
+				'map' => $bestSupplier->map ?? null,
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'brand' => $product->brand ? [
 					'id' => $product->brand->id,
 					'name' => $product->brand->name,
@@ -638,7 +652,7 @@ class SearchController extends Controller
 		};
 
 		// Query logic
-		$products = Product::with(['slug', 'brand', 'currency', 'productSuppliers' ,  'seoUrl'])
+		$products = Product::with(['slug', 'brand', 'currency', 'bestSupplier' ,  'seoUrl'])
 		->where('status', 'published')
 		->where(function ($q) use ($query) {
 			$q->where('name', 'LIKE', "%{$query}%")

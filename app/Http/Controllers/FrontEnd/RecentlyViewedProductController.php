@@ -157,7 +157,7 @@ class RecentlyViewedProductController extends Controller
 		if ($userId) {
 			// Fetch recently viewed products for the logged-in user, eager load the related product data
 			$recentlyViewed = RecentlyViewedProduct::with([
-				'product.productSuppliers',
+				'product.bestSupplier',
 				'product.reviews',
 				'product.currency',
 				'product.sellingUnitAttribute',
@@ -210,11 +210,16 @@ class RecentlyViewedProductController extends Controller
 						];
 					}
 
-					$firstSupplier = $product->productSuppliers()
+					$bestSupplier = $product->bestSupplier()
 					->with([
+						'creator:id,first_name,last_name',
+						'vendor:id,name,country_id,city_id,address,zipcode',
 						'vendor.country:id,name',
 						'vendor.city:id,name',
-						'inventoryUpdator:id,first_name,last_name'
+						'latestPriceTracking',
+						'latestPriceTracking.creator:id,first_name,last_name',
+						'latestInventoryTracking',
+						'latestInventoryTracking.creator:id,first_name,last_name',
 					])
 					->first();
 
@@ -234,41 +239,43 @@ class RecentlyViewedProductController extends Controller
 						"selling_type" => $sellingType,
 
 						// 🔹 Supplier-safe values
-						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+						'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-						'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-						'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-						'vendor_address' => $firstSupplier->vendor->address ?? null,
-						'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+						'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+						'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+						'vendor_address' => $bestSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-						'price' => (float) ($firstSupplier->price ?? 0),
-						'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
-						'original_price' => (float) ($firstSupplier->price ?? 0),
-						'front_sale_price' => (float) ($firstSupplier->sale_price ?? 0),
-						'best_price' => (float) ($firstSupplier->price ?? 0),
+						'price' => (float) ($bestSupplier->price ?? 0),
+						'sale_price' => (float) ($bestSupplier->sale_price ?? 0),
+						'original_price' => (float) ($bestSupplier->price ?? 0),
+						'front_sale_price' => (float) ($bestSupplier->sale_price ?? 0),
+						'best_price' => (float) ($bestSupplier->price ?? 0),
 						"per_unit_price"=> $product->per_unit_price ?? 0,
 
-						'vendor_id' => $firstSupplier->vendor_id ?? null,
-						'map' => (float) ($firstSupplier->map ?? 0),
-						'inventory' => $firstSupplier->inventory ?? 0,
-						'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-						'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-						'in_stock' => $firstSupplier->in_stock ?? 0,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
-						'return_policy' => $firstSupplier->return_policy ?? null,
-						'free_shipping' => $firstSupplier->free_shipping ?? null,
-						'warranty_information' => $firstSupplier->warranty_information ?? null,
-						'min_quantity' => $firstSupplier->min_quantity ?? 0,
-						'is_fixed' => $firstSupplier->is_fixed ?? 0,
+						'vendor_id' => $bestSupplier->vendor_id ?? null,
+						'map' => (float) ($bestSupplier->map ?? 0),
+						'inventory' => $bestSupplier->inventory ?? 0,
+						'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+						'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+						'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'in_stock' => $bestSupplier->in_stock ?? 0,
+						'delivery_days' => $bestSupplier->delivery_days ?? null,
+						'return_policy' => $bestSupplier->return_policy ?? null,
+						'free_shipping' => $bestSupplier->free_shipping ?? null,
+						'warranty_information' => $bestSupplier->warranty_information ?? null,
+						'min_quantity' => $bestSupplier->min_quantity ?? 0,
+						'is_fixed' => $bestSupplier->is_fixed ?? 0,
 						'quote_available' => $product->quote_available ?? null,
 						'isRequired' => $product->isRequired,
 					];
 				})
-				->filter()
+				->filter()//
 				->values()
 				->all(),
 			]);
-		}
+		}//
 	}
 
 	/**
@@ -419,7 +426,7 @@ class RecentlyViewedProductController extends Controller
 
 	private function getGuestRecentlyViewedData(string $guestToken): array
 	{
-		$recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers', 'product.seoUrl')
+		$recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.bestSupplier', 'product.seoUrl')
 		->where('guest_token', $guestToken)
 		->latest()
 		->get();
@@ -453,11 +460,16 @@ class RecentlyViewedProductController extends Controller
 				];
 			}
 
-			$firstSupplier = $product->productSuppliers()
+			$bestSupplier = $product->bestSupplier()
 			->with([
+				'creator:id,first_name,last_name',
+				'vendor:id,name,country_id,city_id,address,zipcode',
 				'vendor.country:id,name',
 				'vendor.city:id,name',
-				'inventoryUpdator:id,first_name,last_name'
+				'latestPriceTracking',
+				'latestPriceTracking.creator:id,first_name,last_name',
+				'latestInventoryTracking',
+				'latestInventoryTracking.creator:id,first_name,last_name',
 			])
 			->first();
 
@@ -475,31 +487,33 @@ class RecentlyViewedProductController extends Controller
 				'in_wishlist' => false,
 				'images' => $cleanedImages,
 				"selling_type"=> $sellingType,
-				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-				'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-				'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-				'vendor_address' => $firstSupplier->vendor->address ?? null,
-				'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+				'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+				'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+				'vendor_address' => $bestSupplier->vendor->address ?? null,
+				'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-				'price' => (float) ($firstSupplier->price ?? 0),
-				"sale_price" => (float) ($firstSupplier->sale_price ?? 0),
-				"original_price"=> (float) ($firstSupplier->price ?? 0),
-				'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
-				"best_price"=> (float) ($firstSupplier->price ?? 0),
+				'price' => (float) ($bestSupplier->price ?? 0),
+				"sale_price" => (float) ($bestSupplier->sale_price ?? 0),
+				"original_price"=> (float) ($bestSupplier->price ?? 0),
+				'front_sale_price' => (float) ($bestSupplier->sale_price ?? $bestSupplier->price ?? 0),
+				"best_price"=> (float) ($bestSupplier->price ?? 0),
 				"per_unit_price"=> $product->per_unit_price ?? null,
-				'vendor_id' => $firstSupplier->vendor_id ?? null,
-				'map' => (float) ($firstSupplier->map ?? 0),
-				'inventory' => $firstSupplier->inventory ?? null,
-				'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-				'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-				'in_stock' => $firstSupplier->in_stock ?? null,
-				'delivery_days' => $firstSupplier->delivery_days ?? null,
-				'return_policy' => $firstSupplier->return_policy ?? null,
-				'free_shipping' => $firstSupplier->free_shipping ?? null,
-				'warranty_information' => $firstSupplier->warranty_information ?? null,
-				'min_quantity' => $firstSupplier->min_quantity ?? 0,
-				'is_fixed' => $firstSupplier->is_fixed ?? 0,
+				'vendor_id' => $bestSupplier->vendor_id ?? null,
+				'map' => (float) ($bestSupplier->map ?? 0),
+				'inventory' => $bestSupplier->inventory ?? null,
+				'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+				'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+				'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+				'in_stock' => $bestSupplier->in_stock ?? null,
+				'delivery_days' => $bestSupplier->delivery_days ?? null,
+				'return_policy' => $bestSupplier->return_policy ?? null,
+				'free_shipping' => $bestSupplier->free_shipping ?? null,
+				'warranty_information' => $bestSupplier->warranty_information ?? null,
+				'min_quantity' => $bestSupplier->min_quantity ?? 0,
+				'is_fixed' => $bestSupplier->is_fixed ?? 0,
 				'quote_available' => $product->quote_available ?? null,
 				'isRequired' => $product->isRequired,
 			];

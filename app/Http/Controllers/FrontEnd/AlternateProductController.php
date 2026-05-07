@@ -53,7 +53,7 @@ class AlternateProductController extends Controller
 			}
 
 			// Step 2: Get published products with those IDs
-			$products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
+			$products = Product::with(['reviews:id,product_id,star', 'currency', 'bestSupplier', 'sellingUnitAttribute', 'seoUrl'])
 			->where('status', 'published')
 			->whereIn('id', $alternateProductIds)
 			->get()
@@ -84,11 +84,16 @@ class AlternateProductController extends Controller
 					];
 				}
 
-				$firstSupplier = $product->productSuppliers()
+				$bestSupplier = $product->bestSupplier()
 				->with([
+					'creator:id,first_name,last_name',
+					'vendor:id,name,country_id,city_id,address,zipcode',
 					'vendor.country:id,name',
 					'vendor.city:id,name',
-					'inventoryUpdator:id,first_name,last_name'
+					'latestPriceTracking',
+					'latestPriceTracking.creator:id,first_name,last_name',
+					'latestInventoryTracking',
+					'latestInventoryTracking.creator:id,first_name,last_name',
 				])
 				->first();
 
@@ -131,8 +136,10 @@ class AlternateProductController extends Controller
 					'vendor_id' => $firstSupplier->vendor_id ?? null,
 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 					'inventory' => $firstSupplier->inventory ?? null,
-					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-					'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
+					'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+					'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+					'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+					'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
 					'in_stock' => $firstSupplier->in_stock ?? null,
 					'delivery_days' => $firstSupplier->delivery_days ?? null,
 					'return_policy' => $firstSupplier->return_policy ?? null,
@@ -148,7 +155,7 @@ class AlternateProductController extends Controller
 				];
 			});
 
-			return response()->json([
+			return response()->json([//
 				'success' => true,
 				'data' => $transformedProducts->values(),
 				'message' => 'Alternate products retrieved successfully',
@@ -199,7 +206,7 @@ class AlternateProductController extends Controller
 			}
 
 			// Step 2: Get published products with those IDs
-			$products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl',])
+			$products = Product::with(['reviews:id,product_id,star', 'currency', 'bestSupplier', 'sellingUnitAttribute', 'seoUrl',])
 			->where('status', 'published')
 			->whereIn('id', $alternateProductIds)
 			->get()
@@ -230,11 +237,16 @@ class AlternateProductController extends Controller
 					];
 				}
 
-				$firstSupplier = $product->productSuppliers()
+				$bestSupplier = $product->bestSupplier()
 				->with([
+					'creator:id,first_name,last_name',
+					'vendor:id,name,country_id,city_id,address,zipcode',
 					'vendor.country:id,name',
 					'vendor.city:id,name',
-					'inventoryUpdator:id,first_name,last_name'
+					'latestPriceTracking',
+					'latestPriceTracking.creator:id,first_name,last_name',
+					'latestInventoryTracking',
+					'latestInventoryTracking.creator:id,first_name,last_name',
 				])
 				->first();
 
@@ -276,8 +288,10 @@ class AlternateProductController extends Controller
 					'vendor_id' => $firstSupplier->vendor_id ?? null,
 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 					'inventory' => $firstSupplier->inventory ?? null,
-					'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-					'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
+					'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+					'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+					'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+					'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
 					'in_stock' => $firstSupplier->in_stock ?? null,
 					'delivery_days' => $firstSupplier->delivery_days ?? null,
 					'return_policy' => $firstSupplier->return_policy ?? null,
@@ -291,7 +305,7 @@ class AlternateProductController extends Controller
 				];
 			});
 
-			return response()->json([
+			return response()->json([//
 				'success' => true,
 				'data' => $transformedProducts->values(),
 				'message' => 'Alternate products retrieved successfully',

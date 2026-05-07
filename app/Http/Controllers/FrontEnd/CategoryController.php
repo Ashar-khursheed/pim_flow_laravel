@@ -458,7 +458,7 @@ class CategoryController extends Controller
 				->with([
 					'reviews',
 					'currency',
-					'productSuppliers',
+					'bestSupplier',
 					'seoUrl',
 					'productAttributes' => function ($query) {
 						$query->whereHas('attributeDetails', function ($q) {
@@ -519,17 +519,22 @@ class CategoryController extends Controller
 						->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
 					}
 
-					$firstSupplier = $details->productSuppliers()
+					$bestSupplier = $product->bestSupplier()
 					->with([
+						'creator:id,first_name,last_name',
+						'vendor:id,name,country_id,city_id,address,zipcode',
 						'vendor.country:id,name',
 						'vendor.city:id,name',
-						'inventoryUpdator:id,first_name,last_name'
+						'latestPriceTracking',
+						'latestPriceTracking.creator:id,first_name,last_name',
+						'latestInventoryTracking',
+						'latestInventoryTracking.creator:id,first_name,last_name',
 					])
 					->first();
 
 					$basePrice = null;
-					if ($firstSupplier) {
-						$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					if ($bestSupplier) {
+						$basePrice = ($bestSupplier->sale_price > 0) ? $bestSupplier->sale_price : $bestSupplier->price;
 					}
 					$perUnitPrice = null;
 
@@ -544,7 +549,7 @@ class CategoryController extends Controller
 
 					$details->per_unit_price = $perUnitPrice;
 
-					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+					$leftStock = ($bestSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 
 					return [
 						'id' => $details->id,
@@ -553,15 +558,15 @@ class CategoryController extends Controller
 						'parent_category_url' => $details->parent_category_url(),
 						'sku' => $details->sku,
 						'url' => $details->seoUrl->url ?? null,
-						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+						'vendor_sku' => $bestSupplier->vendor_sku ?? null,
 
-						'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-						'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-						'vendor_address' => $firstSupplier->vendor->address ?? null,
-						'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
+						'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+						'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+						'vendor_address' => $bestSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
 
-						'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-						'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+						'price' => $bestSupplier ? (float) $bestSupplier->price : null,
+						'sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : null,
 						'total_reviews' => $totalReviews,
 						'avg_rating' => $avgRating,
 						'left_stock' => $leftStock,
@@ -569,23 +574,25 @@ class CategoryController extends Controller
 						'in_wishlist' => $isInWishlist,
 						'images' => $imageUrls,
 						'alt_tags' => $cleanedAlt,
-						"original_price" => $firstSupplier ? (float) $firstSupplier->price : null,
-						'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-						"best_price" => $firstSupplier ? (float) $firstSupplier->price : null,
+						"original_price" => $bestSupplier ? (float) $bestSupplier->price : null,
+						'front_sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : null,
+						"best_price" => $bestSupplier ? (float) $bestSupplier->price : null,
 						"selling_type" => $sellingType,
 						"per_unit_price" => $details->per_unit_price,
-						'vendor_id' => $firstSupplier->vendor_id ?? null,
-						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-						'inventory' => $firstSupplier->inventory ?? null,
-						'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-						'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-						'in_stock' => $firstSupplier->in_stock ?? null,
-						'delivery_days' => $firstSupplier->delivery_days ?? null,
-						'return_policy' => $firstSupplier->return_policy ?? null,
-						'free_shipping' => $firstSupplier->free_shipping ?? null,
-						'warranty_information' => $firstSupplier->warranty_information ?? null,
-						'min_quantity' => $firstSupplier->min_quantity ?? 0,
-						'is_fixed' => $firstSupplier->is_fixed ?? 0,
+						'vendor_id' => $bestSupplier->vendor_id ?? null,
+						'map' => $bestSupplier ? (float) $bestSupplier->map : null,
+						'inventory' => $bestSupplier->inventory ?? null,
+						'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+						'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+						'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'in_stock' => $bestSupplier->in_stock ?? null,
+						'delivery_days' => $bestSupplier->delivery_days ?? null,
+						'return_policy' => $bestSupplier->return_policy ?? null,
+						'free_shipping' => $bestSupplier->free_shipping ?? null,
+						'warranty_information' => $bestSupplier->warranty_information ?? null,
+						'min_quantity' => $bestSupplier->min_quantity ?? 0,
+						'is_fixed' => $bestSupplier->is_fixed ?? 0,
 						'quote_available' => $details->quote_available ?? null,
 						'isRequired' => $details->is_required,
 					];
@@ -608,268 +615,127 @@ class CategoryController extends Controller
 	 *     @OA\Response(response=200, description="Featured products grouped by category fetched successfully for guests", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
-	// public function getAllGuestFeaturedProductsByCategory(Request $request)
-	// {
-	// 	$categories = Category::whereHas('products', function ($query) {
-	// 		$query->where('is_featured', 1)
-	// 		->where('status', 'published');
-	// 	}, '>=', 5)
-	// 		->whereHas('parent.parent') // Ensures only third-level child categories
-	// 		->with([
-	// 			'products' => function ($query) {
-	// 				$query->where('is_featured', 1)
-	// 				->where('status', 'published')
-	// 					->select('id', 'name', 'sku', 'currency_id'); // Select only necessary fields
-	// 				}
-	// 			])
-	// 		->take(5)
-	// 		->get();
-
-	// 	// Subquery for best price and delivery days
-	// 		$subQuery = Product::select('sku')
-	// 		->groupBy('sku');
-
-	// 	// Process categories and products
-	// 		$categories = $categories->map(function ($category) use ($subQuery) {
-	// 			$featuredProducts = $category->products->take(10);
-
-	// 		// Fetch all product details in one query
-	// 			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-	// 				$join->on('ec_products.sku', '=', 'best_products.sku');
-	// 			})
-	// 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-	// 			->with([
-	// 				'reviews',
-	// 				'currency',
-	// 				'productSuppliers',
-	// 				'vendors',
-	// 				'seoUrl',
-	// 				'productAttributes' => function ($query) {
-	// 					$query->whereHas('attributeDetails', function ($q) {
-	// 						$q->whereIn('name', ['Units per Case', 'Pack Type']);
-	// 					});
-	// 				},
-	// 			]) // Eager load relationships
-	// 			->get()
-	// 			->keyBy('id'); // Use keyBy to quickly fetch by ID later
-	// 			return [
-	// 				'category_name' => $category->name,
-	// 				'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
-	// 					$details = $productDetails[$product->id] ?? null;
-	// 					if (!$details)
-	// 					return null; // Skip if no details found
-
-	// 				$totalReviews = $details->reviews->count();
-	// 				$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-	// 				$currencyTitle = $details->currency->symbol;
-
-	// 				// Process images efficiently
-	// 				$imageUrls = is_string($details->images)
-	// 				? json_decode($details->images, true)
-	// 				: (array) $details->images;
-	// 				$cleanedAlt = is_string($details->alt_tags)
-	// 				? json_decode($details->alt_tags, true)
-	// 				: (array) $details->alt_tags;
-
-	// 				$sellingType = null;
-
-	// 				if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
-	// 					$fullValue = $details->sellingUnitAttribute->attribute_value;
-
-	// 					$attributeUnit = strpos($fullValue, '/') !== false
-	// 					? trim(explode('/', $fullValue)[1])
-	// 					: $fullValue;
-
-	// 					$sellingType = [
-	// 						'attribute_value' => $details->sellingUnitAttribute->attribute_value,
-	// 						'attribute_value_unit' => $attributeUnit,
-	// 					];
-	// 				}
-	// 				$firstSupplier = $details->productSuppliers()
-	// 				->with([
-	// 					'vendor.country:id,name',
-	// 					'vendor.city:id,name'
-	// 				])
-	// 				->first();
-
-	// 				$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
-
-	// 				// Calculate per unit price
-	// 				$unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-	// 				$packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-
-	// 				$basePrice = null;
-	// 				if ($firstSupplier) {
-	// 					$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
-	// 				}
-
-	// 				// $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
-	// 				$perUnitPrice = null;
-
-	// 				if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-	// 					$unitValue = (float) $unitsPerCase->attribute_value;
-	// 					if ($unitValue > 0) {
-	// 						$calculated = round($basePrice / $unitValue, 2);
-	// 						$perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
-	// 					}
-	// 				}
-
-	// 				$details->per_unit_price = $perUnitPrice;
-
-
-
-	// 				return [
-	// 					'id' => $details->id,
-	// 					'name' => $details->name,
-	// 					'sku' => $details->sku,
-	// 					'category_url' => $details->category_url(),
-	// 					'parent_category_url' => $details->parent_category_url(),
-	// 					'url' => $details->seoUrl->url ?? null,
-	// 					'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-
-	// 					'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-	// 					'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-	// 					'vendor_address' => $firstSupplier->vendor->address ?? null,
-	// 					'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
-
-	// 					'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-	// 					"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,
-	// 					'total_reviews' => $totalReviews,
-	// 					'avg_rating' => $avgRating,
-	// 					'left_stock' => $leftStock,
-	// 					'currency' => $currencyTitle,
-	// 					'images' => $imageUrls,
-	// 					'alt_tags' => $cleanedAlt,
-	// 					"original_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-	// 					'front_sale_price' => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : (float) $details->price,
-	// 					"best_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
-	// 					"selling_type" => $sellingType,
-	// 					"per_unit_price" => $details->per_unit_price,
-	// 					'vendor_id' => $firstSupplier->vendor_id ?? null,
-	// 					'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-	// 					'inventory' => $firstSupplier->inventory ?? null,
-	// 					'in_stock' => $firstSupplier->in_stock ?? null,
-	// 					'delivery_days' => $firstSupplier->delivery_days ?? null,
-	// 					'return_policy' => $firstSupplier->return_policy ?? null,
-	// 					'free_shipping' => $firstSupplier->free_shipping ?? null,
-	// 					'warranty_information' => $firstSupplier->warranty_information ?? null,
-	// 					'min_quantity' => $firstSupplier->min_quantity ?? 0,
-	// 					'is_fixed' => $firstSupplier->is_fixed ?? 0,
-	// 					'quote_available' => $details->quote_available ?? null,
-	// 					'isRequired' => $details->is_required,
-	// 				];
-	// 			})->filter()->values(), // Remove null values and reset array keys
-	// 		];//
-	// 	});
-
-	// 	return response()->json([//
-	// 		'success' => true,
-	// 		'data' => $categories,
-	// 	]);
-	// }
 	public function getAllGuestFeaturedProductsByCategory(Request $request)
 	{
 		$categories = Category::whereHas('products', function ($query) {
-				$query->where('is_featured', 1)->where('status', 'published');
-			}, '>=', 5)
-			->whereHas('parent.parent')
-			->with([
-				'products' => function ($query) {
-					$query->where('is_featured', 1)
-						->where('status', 'published')
-						->select('id', 'name', 'sku', 'currency_id');
-				}
-			])
-			->take(5)
-			->get();
+			$query->where('is_featured', 1)->where('status', 'published');
+		}, '>=', 5)
+		->whereHas('parent.parent')
+		->with([
+			'products' => function ($query) {
+				$query->where('is_featured', 1)
+				->where('status', 'published')
+				->select('id', 'name', 'sku', 'currency_id');
+			}
+		])
+		->take(5)
+		->get();
 
 		$subQuery = Product::select('sku')->groupBy('sku');
 
 		$categories = $categories->map(function ($category) use ($subQuery) {
-				$featuredProducts = $category->products->take(10);
+			$featuredProducts = $category->products->take(10);
 
-				$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-						$join->on('ec_products.sku', '=', 'best_products.sku');
-					})
-					->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-					->with([
-						'reviews',
-						'currency',
-						'seoUrl',
-						'productSuppliers' => function ($q) {
-							$q->with([
-								'vendor:id,address,zipcode',
-								'vendor.country:id,name',
-								'vendor.city:id,name',
-								'inventoryUpdator:id,first_name,last_name',
-							])->orderBy('id')->limit(1);
-						},
-						'productAttributes' => function ($query) {
-							$query->whereHas('attributeDetails', function ($q) {
-								$q->whereIn('name', ['Units per Case', 'Pack Type']);
-							});
-						},
+			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
+				$join->on('ec_products.sku', '=', 'best_products.sku');
+			})
+			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
+			->with([
+				'reviews',
+				'currency',
+				'seoUrl',
+				'bestSupplier' => function ($q) {
+					$q->with([
+						'creator:id,first_name,last_name',
+						'vendor:id,name,country_id,city_id,address,zipcode',
+						'vendor.country:id,name',
+						'vendor.city:id,name',
+						'latestPriceTracking',
+						'latestPriceTracking.creator:id,first_name,last_name',
+						'latestInventoryTracking',
+						'latestInventoryTracking.creator:id,first_name,last_name',
 					])
-					->get()
-					->keyBy('id');
+				},
+				'productAttributes' => function ($query) {
+					$query->whereHas('attributeDetails', function ($q) {
+						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+					});
+				},
+			])
+			->get()
+			->keyBy('id');
 
-				return [
-					'category_name' => $category->name,
-					'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
-						$details = $productDetails[$product->id] ?? null;
-						if (!$details) return null;
+			return [
+				'category_name' => $category->name,
+				'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
+					$details = $productDetails[$product->id] ?? null;
+					if (!$details) return null;
 
-						$firstSupplier = $details->productSuppliers->first();
-						$totalReviews = $details->reviews->count();
-						$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-						$currencyTitle = $details->currency->symbol ?? null;
-						$imageUrls = is_string($details->images) ? json_decode($details->images, true) : (array) $details->images;
-						$cleanedAlt = is_string($details->alt_tags) ? json_decode($details->alt_tags, true) : (array) $details->alt_tags;
-						$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+					$bestSupplier = $product->bestSupplier()
+					->with([
+						'creator:id,first_name,last_name',
+						'vendor:id,name,country_id,city_id,address,zipcode',
+						'vendor.country:id,name',
+						'vendor.city:id,name',
+						'latestPriceTracking',
+						'latestPriceTracking.creator:id,first_name,last_name',
+						'latestInventoryTracking',
+						'latestInventoryTracking.creator:id,first_name,last_name',
+					])
+					->first();
 
-						return [
-							'id' => $details->id,
-							'name' => $details->name,
-							'sku' => $details->sku,
-							'category_url' => $details->category_url(),
-							'parent_category_url' => $details->parent_category_url(),
-							'url' => $details->seoUrl->url ?? null,
-							'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-							'vendor_country' => $firstSupplier->vendor->country->name ?? null,
-							'vendor_city' => $firstSupplier->vendor->city->name ?? null,
-							'vendor_address' => $firstSupplier->vendor->address ?? null,
-							'vendor_zipcode' => $firstSupplier->vendor->zipcode ?? null,
-							'price' => $firstSupplier ? (float) $firstSupplier->price : (float) $details->price,
-							'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-							'total_reviews' => $totalReviews,
-							'avg_rating' => $avgRating,
-							'left_stock' => $leftStock,
-							'currency' => $currencyTitle,
-							'images' => $imageUrls,
-							'alt_tags' => $cleanedAlt,
-							'original_price' => $firstSupplier ? (float) $firstSupplier->price : (float) $details->price,
-							'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : (float) $details->price,
-							'best_price' => $firstSupplier ? (float) $firstSupplier->price : (float) $details->price,
-							'vendor_id' => $firstSupplier->vendor_id ?? null,
-							'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-							'inventory' => $firstSupplier->inventory ?? null,
-							'inventory_updated_by' => $firstSupplier->inventoryUpdator->name ?? null,
-							'inventory_updated_at' => $firstSupplier->inventory_updated_at ?? null,
-							'in_stock' => $firstSupplier->in_stock ?? null,
-							'delivery_days' => $firstSupplier->delivery_days ?? null,
-							'return_policy' => $firstSupplier->return_policy ?? null,
-							'free_shipping' => $firstSupplier->free_shipping ?? null,
-							'warranty_information' => $firstSupplier->warranty_information ?? null,
-							'min_quantity' => $firstSupplier->min_quantity ?? 0,
-							'is_fixed' => $firstSupplier->is_fixed ?? 0,
-							'quote_available' => $details->quote_available ?? null,
-							'isRequired' => $details->is_required,
-						];
-					})->filter()->values(),
-				];
+					$totalReviews = $details->reviews->count();
+					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
+					$currencyTitle = $details->currency->symbol ?? null;
+					$imageUrls = is_string($details->images) ? json_decode($details->images, true) : (array) $details->images;
+					$cleanedAlt = is_string($details->alt_tags) ? json_decode($details->alt_tags, true) : (array) $details->alt_tags;
+					$leftStock = ($bestSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+
+					return [
+						'id' => $details->id,
+						'name' => $details->name,
+						'sku' => $details->sku,
+						'category_url' => $details->category_url(),
+						'parent_category_url' => $details->parent_category_url(),
+						'url' => $details->seoUrl->url ?? null,
+						'vendor_sku' => $bestSupplier->vendor_sku ?? null,
+						'vendor_country' => $bestSupplier->vendor->country->name ?? null,
+						'vendor_city' => $bestSupplier->vendor->city->name ?? null,
+						'vendor_address' => $bestSupplier->vendor->address ?? null,
+						'vendor_zipcode' => $bestSupplier->vendor->zipcode ?? null,
+						'price' => $bestSupplier ? (float) $bestSupplier->price : (float) $details->price,
+						'sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : null,
+						'total_reviews' => $totalReviews,
+						'avg_rating' => $avgRating,
+						'left_stock' => $leftStock,
+						'currency' => $currencyTitle,
+						'images' => $imageUrls,
+						'alt_tags' => $cleanedAlt,
+						'original_price' => $bestSupplier ? (float) $bestSupplier->price : (float) $details->price,
+						'front_sale_price' => $bestSupplier ? (float) $bestSupplier->sale_price : (float) $details->price,
+						'best_price' => $bestSupplier ? (float) $bestSupplier->price : (float) $details->price,
+						'vendor_id' => $bestSupplier->vendor_id ?? null,
+						'map' => $bestSupplier ? (float) $bestSupplier->map : null,
+						'inventory' => $bestSupplier->inventory ?? null,
+						'inventory_updated_by' => $bestSupplier->latestInventoryTracking->creator->name ?? $bestSupplier->creator->name,
+						'inventory_updated_at' => $bestSupplier->latestInventoryTracking ? $bestSupplier->latestInventoryTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'price_updated_by' => $bestSupplier->latestPriceTracking->creator->name ?? $bestSupplier->creator->name,
+						'price_updated_at' => $bestSupplier->latestPriceTracking ? $bestSupplier->latestPriceTracking->created_at->format('Y-m-d H:i:s') : $bestSupplier->created_at->format('Y-m-d H:i:s'),
+						'in_stock' => $bestSupplier->in_stock ?? null,
+						'delivery_days' => $bestSupplier->delivery_days ?? null,
+						'return_policy' => $bestSupplier->return_policy ?? null,
+						'free_shipping' => $bestSupplier->free_shipping ?? null,
+						'warranty_information' => $bestSupplier->warranty_information ?? null,
+						'min_quantity' => $bestSupplier->min_quantity ?? 0,
+						'is_fixed' => $bestSupplier->is_fixed ?? 0,
+						'quote_available' => $details->quote_available ?? null,
+						'isRequired' => $details->is_required,
+					];
+				})->filter()->values(),
+			];
 		});
 
-		return response()->json([
+		return response()->json([//
 			'success' => true,
 			'data' => $categories,
 		]);
@@ -962,7 +828,7 @@ class CategoryController extends Controller
 
 			// Only categories that are directly assigned to products having sale price
 		->whereHas('products', function ($query) {
-			$query->whereHas('productSuppliers', function ($q) {
+			$query->whereHas('bestSupplier', function ($q) {
 				$q->whereNotNull('sale_price')
 				->where('sale_price', '>', 0);
 			});
