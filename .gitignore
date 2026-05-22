@@ -34,7 +34,7 @@ __pycache__/
 venv/
 app/Script/analytics-key.json
 .env
-*.json
+composer.lock
 app/Script/horeca-464007-8c1c2e126143.json
 storage/api-docs/api-docs.json
 app/Script/the-horecastore-usa-478610-d9b99c2833ec.json
