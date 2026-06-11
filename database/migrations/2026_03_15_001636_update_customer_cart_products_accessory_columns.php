@@ -35,7 +35,7 @@ return new class extends Migration
 
 				foreach ($accessoryIds as $accessoryItemId) {
 					/* price fetch karo product_accessory_types se */
-					$price = DB::table('product_accessory_types')
+					$price = DB::table('accessory_items')
 						->where('product_accessory_id', $accessoryItemId)
 						->value('price');
 
